@@ -2,6 +2,8 @@
 
 A desktop app for yearly goals and weekly check-ins. Set your intentions at the start of the year, then reflect on your progress every week.
 
+Yay!
+
 ## Features
 
 - **Goals** — Define your goals for the year with titles and descriptions
