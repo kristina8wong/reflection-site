@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Goal } from '../types'
-import { addGoal, updateGoal, deleteGoal } from '../storage'
+import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../storage'
 import './GoalsView.css'
 
 interface GoalsViewProps {
@@ -15,8 +15,11 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
+  const [draggedId, setDraggedId] = useState<string | null>(null)
 
-  const yearGoals = goals.filter((g) => g.year === currentYear)
+  const yearGoals = goals
+    .filter((g) => g.year === currentYear)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -51,6 +54,30 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
       if (editingId === id) setEditingId(null)
       onRefresh()
     }
+  }
+
+  function handleDragStart(goalId: string) {
+    setDraggedId(goalId)
+  }
+
+  function handleDragOver(e: React.DragEvent, targetGoalId: string) {
+    e.preventDefault()
+    if (!draggedId || draggedId === targetGoalId) return
+
+    const draggedIndex = yearGoals.findIndex((g) => g.id === draggedId)
+    const targetIndex = yearGoals.findIndex((g) => g.id === targetGoalId)
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    const reordered = [...yearGoals]
+    const [removed] = reordered.splice(draggedIndex, 1)
+    reordered.splice(targetIndex, 0, removed)
+
+    reorderGoals(reordered.map((g) => g.id))
+    onRefresh()
+  }
+
+  function handleDragEnd() {
+    setDraggedId(null)
   }
 
   return (
@@ -89,7 +116,14 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
           </li>
         )}
         {yearGoals.map((goal) => (
-          <li key={goal.id} className="goal-card">
+          <li
+            key={goal.id}
+            className={`goal-card ${draggedId === goal.id ? 'dragging' : ''}`}
+            draggable={editingId !== goal.id}
+            onDragStart={() => handleDragStart(goal.id)}
+            onDragOver={(e) => handleDragOver(e, goal.id)}
+            onDragEnd={handleDragEnd}
+          >
             {editingId === goal.id ? (
               <div className="goal-edit">
                 <input

@@ -89,15 +89,45 @@
   border-left: 1px solid var(--border);
 }
 
-.year-goal-row {
-  display: contents;
-}
-
 .year-goal-info {
   grid-column: 1;
-  justify-self: start;
-  padding: 0.5rem 0;
+  justify-self: stretch;
+  padding: 0.75rem;
   min-width: 0;
+  width: 100%;
+  cursor: grab;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0.25rem 0;
+  transition: border-color 0.2s, background-color 0.2s;
+  position: relative;
+}
+
+.year-goal-info:hover {
+  border-color: var(--text-muted);
+  background: var(--bg);
+}
+
+.year-goal-info:active {
+  cursor: grabbing;
+}
+
+.year-goal-info.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.year-drop-indicator {
+  height: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(201, 168, 108, 0.8);
+  pointer-events: none;
+  position: relative;
+  z-index: 100;
+  margin: -2px 0;
+  border-radius: 2px;
+  align-self: start;
 }
 
 .year-goal-info h3 {
@@ -117,6 +147,11 @@
   justify-content: center;
   width: 100%;
   padding: 4px 0;
+  margin: 0.25rem 0;
+}
+
+.year-bubble-cell.dragging {
+  opacity: 0.5;
 }
 
 .year-bubble-cell.month-start {
@@ -137,16 +172,24 @@
   font-weight: 600;
   color: var(--text-muted);
   transition: all 0.15s;
+  cursor: pointer;
+  padding: 0;
 }
 
 .week-dot:hover {
   border-color: var(--text-muted);
+  transform: scale(1.1);
 }
 
 .week-dot.filled {
   background: var(--accent-dim);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.week-dot.filled:hover {
+  border-color: var(--accent);
+  background: rgba(201, 168, 108, 0.4);
 }
 
 .year-legend {

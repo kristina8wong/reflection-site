@@ -4,6 +4,7 @@ export interface Goal {
   description: string
   createdAt: string
   year: number
+  order: number
 }
 
 export interface CheckIn {

@@ -116,6 +116,17 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 0.75rem;
+  cursor: grab;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.goal-card:active {
+  cursor: grabbing;
+}
+
+.goal-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
 }
 
 @media (max-width: 640px) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Goal } from '../types'
-import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn } from '../storage'
+import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../storage'
 import { getWeekOfYear, getWeeksInYear, formatWeekRange } from '../utils'
 import './GoalsView.css'
 import './CheckInView.css'
@@ -34,10 +34,11 @@ export function CheckInView({
   const [reflections, setReflections] = useState<Record<string, string>>({})
   const [ratings, setRatings] = useState<Record<string, 1 | 2 | 3 | 4 | 5 | null>>({})
   const [editingCheckInId, setEditingCheckInId] = useState<string | null>(null)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
 
-  const yearGoals = goals.filter((g) => g.year === year).sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  )
+  const yearGoals = goals
+    .filter((g) => g.year === year)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   useEffect(() => {
     setSelectedWeek((w) => Math.min(w, totalWeeks))
@@ -108,6 +109,30 @@ export function CheckInView({
     onRefresh()
   }
 
+  function handleDragStart(goalId: string) {
+    setDraggedId(goalId)
+  }
+
+  function handleDragOver(e: React.DragEvent, targetGoalId: string) {
+    e.preventDefault()
+    if (!draggedId || draggedId === targetGoalId) return
+
+    const draggedIndex = sortedGoals.findIndex((g) => g.id === draggedId)
+    const targetIndex = sortedGoals.findIndex((g) => g.id === targetGoalId)
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    const reordered = [...sortedGoals]
+    const [removed] = reordered.splice(draggedIndex, 1)
+    reordered.splice(targetIndex, 0, removed)
+
+    reorderGoals(reordered.map((g) => g.id))
+    onRefresh()
+  }
+
+  function handleDragEnd() {
+    setDraggedId(null)
+  }
+
   if (yearGoals.length === 0) {
     return (
       <div className="goals-view checkin-empty-state">
@@ -161,7 +186,11 @@ export function CheckInView({
           return (
             <li
               key={goal.id}
-              className={`goal-card checkin-card ${isPending ? 'checkin-card-pending' : 'checkin-card-completed'}`}
+              className={`goal-card checkin-card ${isPending ? 'checkin-card-pending' : 'checkin-card-completed'} ${draggedId === goal.id ? 'dragging' : ''}`}
+              draggable={true}
+              onDragStart={() => handleDragStart(goal.id)}
+              onDragOver={(e) => handleDragOver(e, goal.id)}
+              onDragEnd={handleDragEnd}
             >
               <div className="goal-content checkin-goal-content">
                 <h3>{goal.title}</h3>

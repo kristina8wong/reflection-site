@@ -83,6 +83,7 @@ export default function App() {
             goals={goals}
             checkIns={checkIns}
             currentYear={currentYear}
+            onRefresh={refresh}
           />
         )}
       </main>

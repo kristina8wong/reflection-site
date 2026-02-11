@@ -133,6 +133,17 @@
 .checkin-card {
   flex-direction: row;
   align-items: flex-start;
+  cursor: grab;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.checkin-card:active {
+  cursor: grabbing;
+}
+
+.checkin-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
 }
 
 .checkin-goal-content {

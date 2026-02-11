@@ -13,8 +13,15 @@ export function loadData(): AppData {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...defaultData }
     const data = JSON.parse(raw) as AppData
+    
+    // Migration: add order field to goals that don't have it
+    const goals = (data.goals ?? []).map((g, index) => ({
+      ...g,
+      order: g.order ?? index,
+    }))
+    
     return {
-      goals: data.goals ?? [],
+      goals,
       checkIns: data.checkIns ?? [],
       currentYear: data.currentYear ?? new Date().getFullYear(),
     }
@@ -27,12 +34,14 @@ export function saveData(data: AppData): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
-export function addGoal(goal: Omit<Goal, 'id' | 'createdAt'>): Goal {
+export function addGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'order'>): Goal {
   const data = loadData()
+  const maxOrder = data.goals.reduce((max, g) => Math.max(max, g.order ?? 0), 0)
   const newGoal: Goal = {
     ...goal,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
+    order: maxOrder + 1,
   }
   data.goals.push(newGoal)
   saveData(data)
@@ -111,4 +120,15 @@ export function getGoalsForYear(year: number): Goal[] {
 
 export function getCheckInsForWeek(weekNumber: number, year: number): CheckIn[] {
   return loadData().checkIns.filter((c) => c.weekNumber === weekNumber && c.year === year)
+}
+
+export function reorderGoals(goalIds: string[]): void {
+  const data = loadData()
+  goalIds.forEach((id, index) => {
+    const goal = data.goals.find((g) => g.id === id)
+    if (goal) {
+      goal.order = index
+    }
+  })
+  saveData(data)
 }
