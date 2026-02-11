@@ -1,0 +1,271 @@
+/* Check-in specific overrides and additions */
+
+.checkin-view {
+  max-width: 700px;
+}
+
+.checkin-view .goals-intro {
+  margin-bottom: 1.5rem;
+}
+
+/* Progress bar */
+.checkin-progress-bar {
+  height: 4px;
+  background: var(--bg-card);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.checkin-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.checkin-progress-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Saved rating visual */
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.rating-dot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.rating-dot.filled {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rating-label-saved {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-left: 0.25rem;
+}
+
+.week-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.week-nav {
+  padding: 0.5rem 1rem;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.week-nav:hover:not(:disabled) {
+  background: var(--border);
+  border-color: var(--text-muted);
+}
+
+.week-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.week-label {
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+
+.week-range {
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.checkin-empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.checkin-empty-state h2 {
+  margin-bottom: 0.75rem;
+}
+
+/* Check-in goal cards - full form for each */
+.checkin-card {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.checkin-goal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.checkin-card-pending {
+  border-left: 3px solid var(--accent-dim);
+}
+
+.checkin-card-completed {
+  opacity: 0.95;
+}
+
+.checkin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.checkin-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-save-goal {
+  align-self: flex-start;
+}
+
+.checkin-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.reflection-preview {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  max-height: 4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  margin: 0;
+}
+
+.rating-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.progress-rating {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.rating-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.rating-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.rating-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.rating-num {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.rating-desc {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.rating-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rating-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rating-btn.active .rating-desc {
+  color: var(--accent);
+}
+
+.reflection-field {
+  width: 100%;
+}
+
+.reflection-field label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.reflection-textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.reflection-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+

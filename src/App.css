@@ -1,0 +1,81 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.year-select,
+.nav-tab {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.year-select {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.year-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nav-tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-tab:hover {
+  color: var(--text);
+  background: var(--bg-card);
+}
+
+.nav-tab.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.app-main {
+  flex: 1;
+  overflow: auto;
+  padding: 1.5rem;
+}

@@ -1,0 +1,152 @@
+.year-view {
+  max-width: 100%;
+}
+
+.year-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.year-empty h2 {
+  margin-bottom: 0.75rem;
+}
+
+.year-empty p {
+  color: var(--text-muted);
+}
+
+.year-header {
+  margin-bottom: 2rem;
+}
+
+.year-header h2 {
+  margin-bottom: 0.5rem;
+}
+
+.year-timeline {
+  display: grid;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  align-items: center;
+  justify-items: center;
+}
+
+.year-grid-spacer {
+  grid-column: 1;
+}
+
+.year-month-spacer {
+  grid-row: 1;
+}
+
+.year-date-spacer {
+  grid-row: 2;
+}
+
+.year-month-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.year-date-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.year-date-cell.month-start {
+  border-left: 1px solid var(--border);
+}
+
+.year-goal-row {
+  display: contents;
+}
+
+.year-goal-info {
+  grid-column: 1;
+  justify-self: start;
+  padding: 0.5rem 0;
+  min-width: 0;
+}
+
+.year-goal-info h3 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.avg-rating {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.year-bubble-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.year-bubble-cell.month-start {
+  border-left: 1px solid var(--border);
+}
+
+.week-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 24px;
+  min-height: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.week-dot:hover {
+  border-color: var(--text-muted);
+}
+
+.week-dot.filled {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.year-legend {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
