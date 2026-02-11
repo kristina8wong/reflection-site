@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import * as React from 'react'
 import type { Goal, CheckIn } from '../types'
 import {
   getWeeksInYear,
@@ -181,7 +182,7 @@ export function YearView({
           const isBeingDragged = draggedId === goal.id
           const showDropIndicator = dragOverId === goal.id && draggedId !== goal.id
           return (
-            <>
+            <React.Fragment key={goal.id}>
               {/* Drop indicator line - appears above the target row */}
               {showDropIndicator && (
                 <div
@@ -236,7 +237,7 @@ export function YearView({
                   )
                 }
               )}
-            </>
+            </React.Fragment>
           )
         })}
       </div>
@@ -253,6 +254,7 @@ export function YearView({
       {modalOpen && selectedGoal && selectedWeek && (
         <CheckInModal
           goal={selectedGoal}
+          checkIns={checkIns}
           weekNumber={selectedWeek}
           year={currentYear}
           onClose={handleModalClose}

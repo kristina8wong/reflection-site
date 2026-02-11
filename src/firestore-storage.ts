@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   setDoc,
   updateDoc,
@@ -35,11 +34,14 @@ export async function addGoal(
   userId: string,
   goal: Omit<Goal, 'id' | 'createdAt' | 'order'>
 ): Promise<Goal> {
-  // Get max order for user's goals
+  // Get max order for user's goals (simplified query to avoid index requirement)
   const goalsRef = collection(db, GOALS_COLLECTION)
-  const q = query(goalsRef, where('userId', '==', userId), where('year', '==', goal.year))
+  const q = query(goalsRef, where('userId', '==', userId))
   const snapshot = await getDocs(q)
-  const maxOrder = snapshot.docs.reduce((max, doc) => {
+  
+  // Filter by year in memory and get max order
+  const yearGoals = snapshot.docs.filter(doc => doc.data().year === goal.year)
+  const maxOrder = yearGoals.reduce((max, doc) => {
     const data = doc.data()
     return Math.max(max, data.order ?? 0)
   }, 0)
@@ -399,24 +401,32 @@ export async function shareGoal(
       return { success: false, error: 'You cannot share a goal with yourself' }
     }
     
-    // Check if already shared
-    const sharesRef = collection(db, SHARES_COLLECTION)
+    // Use sharedWithId_goalId as doc ID so Firestore rules can check exists(shares/{auth.uid}_{goalId})
+    const shareId = `${user.uid}_${goalId}`
+    const shareRef = doc(db, SHARES_COLLECTION, shareId)
+    
+    // Query for existing share (don't use getDoc - it fails on non-existent docs due to rules)
     const existingQuery = query(
-      sharesRef,
+      collection(db, SHARES_COLLECTION),
       where('ownerId', '==', ownerId),
       where('sharedWithId', '==', user.uid),
       where('goalId', '==', goalId)
     )
     const existingSnapshot = await getDocs(existingQuery)
-    
     if (!existingSnapshot.empty) {
+      const existingDoc = existingSnapshot.docs[0]
+      // Migrate legacy (random ID) to new format so goals rule works
+      if (existingDoc.id !== shareId) {
+        await setDoc(shareRef, { ...existingDoc.data(), id: shareId })
+        await deleteDoc(existingDoc.ref)
+        return { success: true }
+      }
       return { success: false, error: 'Goal already shared with this user' }
     }
     
     // Create share
-    const shareRef = doc(collection(db, SHARES_COLLECTION))
     await setDoc(shareRef, {
-      id: shareRef.id,
+      id: shareId,
       ownerId,
       ownerName,
       sharedWithId: user.uid,
@@ -438,9 +448,13 @@ export async function unshareGoal(shareId: string): Promise<void> {
   await deleteDoc(shareRef)
 }
 
-export async function getSharesForGoal(goalId: string): Promise<Share[]> {
+export async function getSharesForGoal(goalId: string, ownerId: string): Promise<Share[]> {
   const sharesRef = collection(db, SHARES_COLLECTION)
-  const q = query(sharesRef, where('goalId', '==', goalId))
+  const q = query(
+    sharesRef,
+    where('goalId', '==', goalId),
+    where('ownerId', '==', ownerId)
+  )
   const snapshot = await getDocs(q)
   
   return snapshot.docs.map((doc) => {

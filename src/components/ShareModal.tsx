@@ -19,13 +19,14 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
   const [loadingShares, setLoadingShares] = useState(true)
 
   useEffect(() => {
-    loadShares()
-  }, [goal.id])
+    if (currentUser) loadShares()
+  }, [goal.id, currentUser])
 
   async function loadShares() {
+    if (!currentUser) return
     try {
       setLoadingShares(true)
-      const goalShares = await getSharesForGoal(goal.id)
+      const goalShares = await getSharesForGoal(goal.id, currentUser.uid)
       setShares(goalShares)
     } catch (err) {
       console.error('Error loading shares:', err)

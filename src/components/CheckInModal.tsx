@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Goal, CheckIn } from '../types'
-import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn } from '../firestore-storage'
+import { saveOrUpdateCheckIn, deleteCheckIn } from '../firestore-storage'
 import { formatWeekRange } from '../utils'
 import './CheckInModal.css'
 
@@ -14,6 +14,7 @@ const RATING_LABELS: Record<number, string> = {
 
 interface CheckInModalProps {
   goal: Goal
+  checkIns: CheckIn[]
   weekNumber: number
   year: number
   onClose: () => void
@@ -22,6 +23,7 @@ interface CheckInModalProps {
 
 export function CheckInModal({
   goal,
+  checkIns,
   weekNumber,
   year,
   onClose,
@@ -31,10 +33,12 @@ export function CheckInModal({
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null)
 
   useEffect(() => {
-    const ci = getCheckIn(goal.id, weekNumber, year)
+    const ci = checkIns.find(
+      (c) => c.goalId === goal.id && c.weekNumber === weekNumber && c.year === year
+    )
     setReflection(ci?.reflection ?? '')
     setRating(ci?.progressRating ?? null)
-  }, [goal.id, weekNumber, year])
+  }, [goal.id, weekNumber, year, checkIns])
 
   async function handleSave() {
     await saveOrUpdateCheckIn(goal.id, weekNumber, year, reflection, rating)

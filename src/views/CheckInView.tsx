@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { Goal } from '../types'
-import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../firestore-storage'
+import type { Goal, CheckIn } from '../types'
+import { saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../firestore-storage'
 import { getWeekOfYear, getWeeksInYear, formatWeekRange } from '../utils'
 import './GoalsView.css'
 import './CheckInView.css'
@@ -17,12 +17,14 @@ const REFLECTION_PROMPT = 'What happened this week? Any wins, setbacks, or insig
 
 interface CheckInViewProps {
   goals: Goal[]
+  checkIns: CheckIn[]
   currentYear: number
   onRefresh: () => void
 }
 
 export function CheckInView({
   goals,
+  checkIns,
   currentYear,
   onRefresh,
 }: CheckInViewProps) {
@@ -44,6 +46,13 @@ export function CheckInView({
     setSelectedWeek((w) => Math.min(w, totalWeeks))
   }, [year, totalWeeks])
 
+  // Helper to get check-in from the checkIns array
+  const getCheckIn = (goalId: string, weekNumber: number, yearNum: number): CheckIn | undefined => {
+    return checkIns.find(
+      (c) => c.goalId === goalId && c.weekNumber === weekNumber && c.year === yearNum
+    )
+  }
+
   const goalIds = yearGoals.map((g) => g.id).sort().join(',')
   useEffect(() => {
     const init: Record<string, string> = {}
@@ -55,7 +64,7 @@ export function CheckInView({
     })
     setReflections(init)
     setRatings(initRatings)
-  }, [selectedWeek, year, goalIds])
+  }, [selectedWeek, year, goalIds, checkIns])
 
   const pendingGoals = yearGoals.filter((g) => !getCheckIn(g.id, selectedWeek, year))
   const completedGoals = yearGoals.filter((g) => getCheckIn(g.id, selectedWeek, year))
@@ -126,7 +135,7 @@ export function CheckInView({
     reordered.splice(targetIndex, 0, removed)
 
     await reorderGoals(reordered.map((g) => g.id))
-    onRefresh()
+    onRefresh(false) // Don't show loading state during drag
   }
 
   function handleDragEnd() {

@@ -14,6 +14,13 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || 'your-app-id'
 }
 
+// Debug: Log config (remove after testing)
+console.log('Firebase config loaded:', {
+  apiKey: firebaseConfig.apiKey?.substring(0, 10) + '...',
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain
+})
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 

@@ -66,13 +66,15 @@ service cloud.firestore {
         get(/databases/$(database)/documents/goals/$(resource.data.goalId)).data.userId == request.auth.uid;
     }
     
-    // Shares: users can manage shares for their goals
+    // Shares: document ID must be {sharedWithId}_{goalId} for goals rule to allow reads
     match /shares/{shareId} {
       allow read: if request.auth != null && 
         (resource.data.ownerId == request.auth.uid || 
          resource.data.sharedWithId == request.auth.uid);
       allow create: if request.auth != null && 
         request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
       allow delete: if request.auth != null && 
         resource.data.ownerId == request.auth.uid;
     }

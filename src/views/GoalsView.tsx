@@ -28,14 +28,20 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !currentUser) return
-    await addGoal(currentUser.uid, {
-      title: title.trim(),
-      description: description.trim(),
-      year: currentYear,
-    })
-    setTitle('')
-    setDescription('')
-    onRefresh()
+    
+    try {
+      await addGoal(currentUser.uid, {
+        title: title.trim(),
+        description: description.trim(),
+        year: currentYear,
+      })
+      setTitle('')
+      setDescription('')
+      onRefresh()
+    } catch (error) {
+      console.error('Error adding goal:', error)
+      alert('Failed to add goal. Check console for details.')
+    }
   }
 
   function handleEdit(goal: Goal) {
@@ -77,7 +83,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     reordered.splice(targetIndex, 0, removed)
 
     await reorderGoals(reordered.map((g) => g.id))
-    onRefresh()
+    onRefresh(false) // Don't show loading state during drag
   }
 
   function handleDragEnd() {

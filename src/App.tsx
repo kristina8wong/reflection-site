@@ -19,11 +19,11 @@ function AppContent() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [loading, setLoading] = useState(true)
 
-  async function refresh() {
+  async function refresh(showLoading = true) {
     if (!currentUser) return
     
     try {
-      setLoading(true)
+      if (showLoading) setLoading(true)
       const [yearGoals, allCheckIns] = await Promise.all([
         getGoalsForYear(currentUser.uid, currentYear),
         getAllCheckInsForUser(currentUser.uid)
@@ -33,7 +33,7 @@ function AppContent() {
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }
 
@@ -114,6 +114,7 @@ function AppContent() {
             {activeTab === 'checkin' && (
               <CheckInView
                 goals={goals}
+                checkIns={checkIns}
                 currentYear={currentYear}
                 onRefresh={refresh}
               />
