@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Goal } from '../types'
-import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../storage'
+import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../firestore-storage'
 import { getWeekOfYear, getWeeksInYear, formatWeekRange } from '../utils'
 import './GoalsView.css'
 import './CheckInView.css'
@@ -85,8 +85,8 @@ export function CheckInView({
     setRatings((r) => ({ ...r, [goalId]: value }))
   }
 
-  function handleSaveGoal(goalId: string) {
-    saveOrUpdateCheckIn(
+  async function handleSaveGoal(goalId: string) {
+    await saveOrUpdateCheckIn(
       goalId,
       selectedWeek,
       year,
@@ -101,10 +101,10 @@ export function CheckInView({
     setEditingCheckInId(goalId)
   }
 
-  function handleClearCheckIn(goalId: string) {
+  async function handleClearCheckIn(goalId: string) {
     setReflections((r) => ({ ...r, [goalId]: '' }))
     setRatings((r) => ({ ...r, [goalId]: null }))
-    deleteCheckIn(goalId, selectedWeek, year)
+    await deleteCheckIn(goalId, selectedWeek, year)
     setEditingCheckInId(null)
     onRefresh()
   }
@@ -113,7 +113,7 @@ export function CheckInView({
     setDraggedId(goalId)
   }
 
-  function handleDragOver(e: React.DragEvent, targetGoalId: string) {
+  async function handleDragOver(e: React.DragEvent, targetGoalId: string) {
     e.preventDefault()
     if (!draggedId || draggedId === targetGoalId) return
 
@@ -125,7 +125,7 @@ export function CheckInView({
     const [removed] = reordered.splice(draggedIndex, 1)
     reordered.splice(targetIndex, 0, removed)
 
-    reorderGoals(reordered.map((g) => g.id))
+    await reorderGoals(reordered.map((g) => g.id))
     onRefresh()
   }
 

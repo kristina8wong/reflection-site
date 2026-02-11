@@ -17,9 +17,10 @@
     "reinstall:clean": "rm -rf node_modules && npm cache verify && npm ci"
   },
   "dependencies": {
+    "date-fns": "^3.6.0",
+    "firebase": "^12.9.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "date-fns": "^3.6.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

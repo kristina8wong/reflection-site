@@ -8,7 +8,7 @@ import {
   getMonthSpans,
 } from '../utils'
 import { CheckInModal } from '../components/CheckInModal'
-import { reorderGoals } from '../storage'
+import { reorderGoals } from '../firestore-storage'
 import './YearView.css'
 
 const WEEK_CELL_WIDTH = 44
@@ -63,7 +63,7 @@ export function YearView({
     forceUpdate({})
   }
 
-  function handleDragOver(e: React.DragEvent, targetGoalId: string) {
+  async function handleDragOver(e: React.DragEvent, targetGoalId: string) {
     e.preventDefault()
     const draggedId = draggedIdRef.current
     console.log('handleDragOver - draggedId:', draggedId, 'targetGoalId:', targetGoalId)
@@ -84,7 +84,7 @@ export function YearView({
     const [removed] = reordered.splice(draggedIndex, 1)
     reordered.splice(targetIndex, 0, removed)
 
-    reorderGoals(reordered.map((g) => g.id))
+    await reorderGoals(reordered.map((g) => g.id))
     // Don't refresh during drag - wait until drag ends
   }
 

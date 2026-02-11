@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Goal } from '../types'
-import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../storage'
+import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../firestore-storage'
+import { useAuth } from '../contexts/AuthContext'
 import './GoalsView.css'
 
 interface GoalsViewProps {
@@ -10,6 +11,7 @@ interface GoalsViewProps {
 }
 
 export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
+  const { currentUser } = useAuth()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -21,10 +23,10 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     .filter((g) => g.year === currentYear)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim()) return
-    addGoal({
+    if (!title.trim() || !currentUser) return
+    await addGoal(currentUser.uid, {
       title: title.trim(),
       description: description.trim(),
       year: currentYear,
@@ -40,17 +42,17 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     setEditDesc(goal.description)
   }
 
-  function handleSaveEdit() {
+  async function handleSaveEdit() {
     if (editingId && editTitle.trim()) {
-      updateGoal(editingId, { title: editTitle.trim(), description: editDesc.trim() })
+      await updateGoal(editingId, { title: editTitle.trim(), description: editDesc.trim() })
       setEditingId(null)
       onRefresh()
     }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (confirm('Remove this goal? Its check-ins will also be removed.')) {
-      deleteGoal(id)
+      await deleteGoal(id)
       if (editingId === id) setEditingId(null)
       onRefresh()
     }
@@ -60,7 +62,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     setDraggedId(goalId)
   }
 
-  function handleDragOver(e: React.DragEvent, targetGoalId: string) {
+  async function handleDragOver(e: React.DragEvent, targetGoalId: string) {
     e.preventDefault()
     if (!draggedId || draggedId === targetGoalId) return
 
@@ -72,7 +74,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     const [removed] = reordered.splice(draggedIndex, 1)
     reordered.splice(targetIndex, 0, removed)
 
-    reorderGoals(reordered.map((g) => g.id))
+    await reorderGoals(reordered.map((g) => g.id))
     onRefresh()
   }
 

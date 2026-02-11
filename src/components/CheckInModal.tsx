@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Goal, CheckIn } from '../types'
-import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn } from '../storage'
+import { getCheckIn, saveOrUpdateCheckIn, deleteCheckIn } from '../firestore-storage'
 import { formatWeekRange } from '../utils'
 import './CheckInModal.css'
 
@@ -36,16 +36,16 @@ export function CheckInModal({
     setRating(ci?.progressRating ?? null)
   }, [goal.id, weekNumber, year])
 
-  function handleSave() {
-    saveOrUpdateCheckIn(goal.id, weekNumber, year, reflection, rating)
+  async function handleSave() {
+    await saveOrUpdateCheckIn(goal.id, weekNumber, year, reflection, rating)
     onSave()
     onClose()
   }
 
-  function handleClear() {
+  async function handleClear() {
     setReflection('')
     setRating(null)
-    deleteCheckIn(goal.id, weekNumber, year)
+    await deleteCheckIn(goal.id, weekNumber, year)
     onSave()
     onClose()
   }
