@@ -43,7 +43,7 @@ npm run reinstall:clean
 ### Build Desktop App
 
 ```bash
-npm run build
+npm run build:desktop
 ```
 
 The packaged app will be in the `release/` directory (Mac: `.app`, Windows: `.exe`).

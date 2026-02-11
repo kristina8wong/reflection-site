@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
-    "build": "vite build && electron-builder",
+    "build": "vite build",
+    "build:desktop": "vite build && electron-builder",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
     "electron:build": "vite build && electron-builder",
