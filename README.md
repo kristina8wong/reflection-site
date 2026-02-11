@@ -1,6 +1,11 @@
 # Year Reflection
 
-A desktop app for yearly goals and weekly check-ins. Set your intentions at the start of the year, then reflect on your progress every week.
+A reflection app for yearly goals and weekly check-ins. Set your intentions at the start of the year, then reflect on your progress every week.
+
+## Try It Now
+
+- **Web version:** [year-reflection.vercel.app](https://year-reflection.vercel.app) _(live demo)_
+- **Desktop app:** [Download from Releases](https://github.com/kristina8wong/reflection-site/releases) _(native app)_
 
 Yay!
 
@@ -12,26 +17,36 @@ Yay!
 
 ## Getting Started
 
-### Prerequisites
+### For Development
 
-- [Node.js](https://nodejs.org/) (v18 or later)
+**Prerequisites:**
+- [Node.js](https://nodejs.org/) v18+ (check: `node -v`)
+- npm v9+ (check: `npm -v`)
 
-### Install & Run
+**Install & Run:**
 
 ```bash
-npm install
+# Install dependencies (use ci for reproducible builds)
+npm ci
+
+# Start the app in development mode
 npm run dev
 ```
 
 This starts the Vite dev server and launches the Electron app.
 
-### Build for Distribution
+**Troubleshooting install issues?** Run:
+```bash
+npm run reinstall:clean
+```
+
+### Build Desktop App
 
 ```bash
 npm run build
 ```
 
-The packaged app will be in the `release/` directory.
+The packaged app will be in the `release/` directory (Mac: `.app`, Windows: `.exe`).
 
 ## Tech Stack
 

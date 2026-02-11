@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "A reflection desktop app for yearly goals and weekly check-ins",
   "main": "electron/main.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
     "build": "vite build && electron-builder",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
-    "electron:build": "vite build && electron-builder"
+    "electron:build": "vite build && electron-builder",
+    "reinstall:clean": "rm -rf node_modules && npm cache verify && npm ci"
   },
   "dependencies": {
     "react": "^18.2.0",
