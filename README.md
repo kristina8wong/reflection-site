@@ -55,16 +55,26 @@ In Firestore Database, go to the **Rules** tab and replace with:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Goals: users can only read/write their own goals
-    match /goals/{goalId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.userId == request.auth.uid || 
-         exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + goalId)));
+    // Users: anyone authenticated can read user profiles (for email lookup)
+    // Only the user can write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Check-ins: users can read/write check-ins for their goals
+    // Goals: users can read/write their own goals OR goals shared with them
+    match /goals/{goalId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + goalId)));
+      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Check-ins: users can read/write check-ins for their own goals
+    // Users can read check-ins for goals shared with them
     match /checkIns/{checkInId} {
-      allow read, write: if request.auth != null &&
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
         get(/databases/$(database)/documents/goals/$(resource.data.goalId)).data.userId == request.auth.uid;
     }
     

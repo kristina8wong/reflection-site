@@ -8,6 +8,7 @@ import {
   updateProfile
 } from 'firebase/auth'
 import { auth } from '../firebase'
+import { createUserProfile } from '../firestore-storage'
 
 interface AuthContextType {
   currentUser: User | null
@@ -39,6 +40,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     if (userCredential.user) {
       await updateProfile(userCredential.user, { displayName })
+      // Create user profile in Firestore for email lookup
+      await createUserProfile(userCredential.user.uid, email, displayName)
     }
   }
 

@@ -5,10 +5,11 @@ import type { Goal, CheckIn } from './types'
 import { GoalsView } from './views/GoalsView'
 import { CheckInView } from './views/CheckInView'
 import { YearView } from './views/YearView'
+import { SharedView } from './views/SharedView'
 import { getGoalsForYear, getAllCheckInsForUser } from './firestore-storage'
 import './App.css'
 
-type Tab = 'goals' | 'checkin' | 'year'
+type Tab = 'goals' | 'checkin' | 'year' | 'shared'
 
 function AppContent() {
   const { currentUser, logout } = useAuth()
@@ -88,6 +89,12 @@ function AppContent() {
           >
             Year View
           </button>
+          <button
+            className={`nav-tab ${activeTab === 'shared' ? 'active' : ''}`}
+            onClick={() => setActiveTab('shared')}
+          >
+            Shared
+          </button>
         </nav>
         </div>
       </header>
@@ -119,6 +126,7 @@ function AppContent() {
                 onRefresh={refresh}
               />
             )}
+            {activeTab === 'shared' && <SharedView />}
           </>
         )}
       </main>

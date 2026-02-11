@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Goal } from '../types'
 import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../firestore-storage'
 import { useAuth } from '../contexts/AuthContext'
+import { ShareModal } from '../components/ShareModal'
 import './GoalsView.css'
 
 interface GoalsViewProps {
@@ -18,6 +19,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [sharingGoal, setSharingGoal] = useState<Goal | null>(null)
 
   const yearGoals = goals
     .filter((g) => g.year === currentYear)
@@ -164,6 +166,12 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
                 <div className="goal-actions">
                   <button
                     className="btn-ghost btn-sm"
+                    onClick={() => setSharingGoal(goal)}
+                  >
+                    Share
+                  </button>
+                  <button
+                    className="btn-ghost btn-sm"
                     onClick={() => handleEdit(goal)}
                   >
                     Edit
@@ -180,6 +188,13 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
           </li>
         ))}
       </ul>
+
+      {sharingGoal && (
+        <ShareModal
+          goal={sharingGoal}
+          onClose={() => setSharingGoal(null)}
+        />
+      )}
     </div>
   )
 }

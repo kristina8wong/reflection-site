@@ -45,11 +45,36 @@ Your Year Reflection app now has:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /goals/{goalId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Users: anyone authenticated can read user profiles (for email lookup)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
+    
+    // Goals: users can read/write their own goals OR goals shared with them
+    match /goals/{goalId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + goalId)));
+      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Check-ins: users can read check-ins for their own goals or shared goals
     match /checkIns/{checkInId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/goals/$(resource.data.goalId)).data.userId == request.auth.uid;
+    }
+    
+    // Shares: users can manage shares for their goals
+    match /shares/{shareId} {
+      allow read: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         resource.data.sharedWithId == request.auth.uid);
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
     }
   }
 }
@@ -139,17 +164,30 @@ When you deploy to Vercel, add these environment variables in the Vercel dashboa
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
 
-## Future: Sharing Feature
+## Sharing Feature
 
-The foundation is in place for sharing goals with other users. To implement:
+The app now includes full sharing functionality:
 
-1. Add a "Share" button in GoalsView
-2. Add UI to enter email of person to share with
-3. Implement user lookup by email in Firestore
-4. Create share records in the `shares` collection
-5. Update security rules to allow shared access
+### How to Share Goals:
 
-The `firestore-storage.ts` file has placeholder functions for this (`shareGoal`, `getSharedGoals`).
+1. Go to the **Goals** tab
+2. Click the **Share** button on any goal
+3. Enter the email address of the person you want to share with
+4. They must have an account in the app
+5. Once shared, they can view your goal and all check-ins in the **Shared** tab
+
+### Viewing Shared Goals:
+
+1. Go to the **Shared** tab
+2. You'll see all goals that others have shared with you
+3. Click on a goal to view its description and all check-ins
+4. Shared goals are read-only - you can view but not edit them
+
+### Managing Shares:
+
+1. Click **Share** on a goal to see who it's shared with
+2. Click **Remove** next to any email to revoke access
+3. You can share the same goal with multiple people
 
 ## Troubleshooting
 

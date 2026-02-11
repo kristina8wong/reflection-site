@@ -58,7 +58,6 @@ export function YearView({
   }
 
   function handleDragStart(goalId: string) {
-    console.log('handleDragStart:', goalId)
     draggedIdRef.current = goalId
     forceUpdate({})
   }
@@ -89,15 +88,18 @@ export function YearView({
   }
 
   function handleDragEnd() {
-    console.log('handleDragEnd called, draggedId:', draggedIdRef.current)
-    // Clear dragged state first
+    // Clear dragged state
+    const wasSet = draggedIdRef.current !== null
     draggedIdRef.current = null
     setDragOverId(null)
-    forceUpdate({})
-    // Then refresh to get updated order
-    if (onRefresh) {
-      console.log('Calling onRefresh after drag end')
-      onRefresh()
+    
+    // Force update to clear opacity
+    if (wasSet) {
+      forceUpdate({})
+      // Then refresh to get updated order after a brief delay
+      setTimeout(() => {
+        if (onRefresh) onRefresh()
+      }, 50)
     }
   }
 
@@ -178,12 +180,6 @@ export function YearView({
           const draggedId = draggedIdRef.current
           const isBeingDragged = draggedId === goal.id
           const showDropIndicator = dragOverId === goal.id && draggedId !== goal.id
-          if (isBeingDragged) {
-            console.log('Goal is being dragged:', goal.id, 'draggedId:', draggedId)
-          }
-          if (showDropIndicator) {
-            console.log('Drop indicator should show for goal:', goal.id, 'at gridRow:', gridRow)
-          }
           return (
             <>
               {/* Drop indicator line - appears above the target row */}
