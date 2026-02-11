@@ -23,6 +23,20 @@
   margin-bottom: 0.5rem;
 }
 
+@media (max-width: 640px) {
+  .year-header {
+    margin-bottom: 1rem;
+  }
+  
+  .year-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .year-header .muted {
+    font-size: 0.85rem;
+  }
+}
+
 .year-timeline {
   display: grid;
   overflow-x: auto;
