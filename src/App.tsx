@@ -11,9 +11,17 @@ import './App.css'
 
 type Tab = 'goals' | 'checkin' | 'year' | 'shared'
 
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'goals', label: 'Goals' },
+  { id: 'checkin', label: 'Check-in' },
+  { id: 'year', label: 'Year View' },
+  { id: 'shared', label: 'Shared' },
+]
+
 function AppContent() {
   const { currentUser, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('checkin')
+  const [navOpen, setNavOpen] = useState(false)
   const [goals, setGoals] = useState<Goal[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -43,12 +51,26 @@ function AppContent() {
     }
   }, [currentUser, currentYear])
 
+  useEffect(() => {
+    if (!navOpen) return
+    function handleClickOutside() {
+      setNavOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [navOpen])
+
   if (!currentUser) {
     return <AuthView />
   }
 
   const thisYear = new Date().getFullYear()
   const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
+
+  function handleTabSelect(tab: Tab) {
+    setActiveTab(tab)
+    setNavOpen(false)
+  }
 
   return (
     <div className="app">
@@ -70,32 +92,30 @@ function AppContent() {
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
-          <nav className="nav-tabs">
           <button
-            className={`nav-tab ${activeTab === 'goals' ? 'active' : ''}`}
-            onClick={() => setActiveTab('goals')}
+            className="nav-hamburger"
+            onClick={(e) => {
+              e.stopPropagation()
+              setNavOpen((o) => !o)
+            }}
+            aria-label={navOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={navOpen}
           >
-            Goals
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
           </button>
-          <button
-            className={`nav-tab ${activeTab === 'checkin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('checkin')}
-          >
-            Check-in
-          </button>
-          <button
-            className={`nav-tab ${activeTab === 'year' ? 'active' : ''}`}
-            onClick={() => setActiveTab('year')}
-          >
-            Year View
-          </button>
-          <button
-            className={`nav-tab ${activeTab === 'shared' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shared')}
-          >
-            Shared
-          </button>
-        </nav>
+          <nav className={`nav-tabs ${navOpen ? 'nav-open' : ''}`} onClick={(e) => e.stopPropagation()}>
+            {TABS.map(({ id, label }) => (
+              <button
+                key={id}
+                className={`nav-tab ${activeTab === id ? 'active' : ''}`}
+                onClick={() => handleTabSelect(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 

@@ -23,6 +23,7 @@
   app-region: drag;
   flex-wrap: wrap;
   gap: 0.75rem;
+  position: relative;
 }
 
 .app-title {
@@ -99,11 +100,6 @@
     font-size: 1.1rem;
   }
   
-  .nav-tab {
-    padding: 0.5rem 0.5rem;
-    font-size: 0.8rem;
-  }
-  
   .user-name {
     max-width: 80px;
   }
@@ -128,6 +124,32 @@
 .year-select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Hamburger - hidden on desktop */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.hamburger-line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+  transition: transform 0.2s, opacity 0.2s;
 }
 
 .nav-tabs {
@@ -156,13 +178,44 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .nav-hamburger {
+    display: flex;
+  }
+
+  .nav-tabs {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.2s ease, opacity 0.2s ease;
+    z-index: 100;
+    padding: 0;
+  }
+
+  .nav-tabs.nav-open {
+    max-height: 280px;
+    opacity: 1;
+    padding: 0.5rem;
+  }
+
+  .nav-tabs .nav-tab {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-radius: 8px;
+  }
+}
+
+@media (min-width: 769px) {
   .nav-tab {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    flex: 1;
-    min-width: fit-content;
-    text-align: center;
+    flex: 0 1 auto;
   }
 }
 
