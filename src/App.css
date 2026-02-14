@@ -239,8 +239,36 @@
 }
 
 @media (max-width: 768px) {
+  .header-right {
+    align-items: center;
+  }
+
+  .year-select,
+  .nav-hamburger,
+  .user-menu-trigger {
+    height: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .year-select {
+    padding: 0 0.75rem;
+    line-height: 1;
+  }
+
   .nav-hamburger {
     display: flex;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .user-menu-trigger {
+    padding: 0 0.6rem;
   }
 
   .nav-tabs {
