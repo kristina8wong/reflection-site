@@ -9,8 +9,15 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   backdrop-filter: blur(4px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-backdrop > .modal-content {
+  margin: auto;
 }
 
 .modal-content {

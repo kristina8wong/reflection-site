@@ -1,5 +1,6 @@
 .shared-view {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -217,6 +218,7 @@
   .shared-layout {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    min-height: auto;
   }
 
   .shared-sidebar {
@@ -230,5 +232,16 @@
   .shared-detail-header {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .shared-placeholder {
+    height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shared-content,
+  .shared-sidebar {
+    padding: 1rem;
   }
 }

@@ -1,5 +1,8 @@
 .year-view {
   max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
 }
 
 .year-empty {
@@ -40,9 +43,12 @@
 .year-timeline {
   display: grid;
   overflow-x: auto;
+  overflow-y: visible;
   padding-bottom: 1rem;
   align-items: center;
   justify-items: center;
+  -webkit-overflow-scrolling: touch;
+  min-width: min-content;
 }
 
 .year-grid-spacer {

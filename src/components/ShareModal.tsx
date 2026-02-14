@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Goal } from '../types'
 import { shareGoal, getSharesForGoal, unshareGoal, type Share } from '../firestore-storage'
 import { useAuth } from '../contexts/AuthContext'
+import './CheckInModal.css'
 import './ShareModal.css'
 
 interface ShareModalProps {
