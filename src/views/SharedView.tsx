@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getSharedGoals, getCheckInsForSharedGoal } from '../firestore-storage'
 import type { Goal, CheckIn } from '../types'
@@ -13,14 +13,36 @@ interface SharedGoal extends Goal {
 export function SharedView() {
   const { currentUser } = useAuth()
   const [sharedGoals, setSharedGoals] = useState<SharedGoal[]>([])
+  const [checkInsByGoal, setCheckInsByGoal] = useState<Record<string, CheckIn[]>>({})
   const [selectedGoal, setSelectedGoal] = useState<SharedGoal | null>(null)
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingCheckIns, setLoadingCheckIns] = useState(false)
 
+  // Filters
+  const [filterOwner, setFilterOwner] = useState<string>('')
+  const [filterTitle, setFilterTitle] = useState('')
+  const [filterYear, setFilterYear] = useState<number | ''>('')
+  const [filterWeek, setFilterWeek] = useState<number | ''>('')
+
   useEffect(() => {
     loadSharedGoals()
   }, [currentUser])
+
+  useEffect(() => {
+    if (sharedGoals.length === 0) return
+    const loadAll = async () => {
+      const map: Record<string, CheckIn[]> = {}
+      await Promise.all(
+        sharedGoals.map(async (goal) => {
+          const cis = await getCheckInsForSharedGoal(goal.id)
+          map[goal.id] = cis
+        })
+      )
+      setCheckInsByGoal(map)
+    }
+    loadAll()
+  }, [sharedGoals])
 
   async function loadSharedGoals() {
     if (!currentUser) return
@@ -35,6 +57,42 @@ export function SharedView() {
       setLoading(false)
     }
   }
+
+  const uniqueOwners = useMemo(
+    () => [...new Set(sharedGoals.map((g) => g.ownerName))].sort(),
+    [sharedGoals]
+  )
+  const uniqueYears = useMemo(
+    () => [...new Set(sharedGoals.map((g) => g.year))].sort((a, b) => b - a),
+    [sharedGoals]
+  )
+  const weekOptions = useMemo(() => {
+    const y = typeof filterYear === 'number' ? filterYear : new Date().getFullYear()
+    return Array.from({ length: getWeeksInYear(y) }, (_, i) => i + 1)
+  }, [filterYear])
+
+  const filteredGoals = useMemo(() => {
+    return sharedGoals.filter((goal) => {
+      if (filterOwner && goal.ownerName !== filterOwner) return false
+      if (filterTitle.trim() && !goal.title.toLowerCase().includes(filterTitle.trim().toLowerCase()))
+        return false
+      if (filterYear !== '' && goal.year !== filterYear) return false
+      if (filterWeek !== '' && filterYear !== '') {
+        const goalCheckIns = checkInsByGoal[goal.id] ?? []
+        const hasCheckIn = goalCheckIns.some(
+          (c) => c.weekNumber === filterWeek && c.year === filterYear
+        )
+        if (!hasCheckIn) return false
+      }
+      return true
+    })
+  }, [sharedGoals, filterOwner, filterTitle, filterYear, filterWeek, checkInsByGoal])
+
+  useEffect(() => {
+    if (selectedGoal && !filteredGoals.some((g) => g.id === selectedGoal.id)) {
+      setSelectedGoal(null)
+    }
+  }, [filteredGoals, selectedGoal])
 
   async function handleSelectGoal(goal: SharedGoal) {
     setSelectedGoal(goal)
@@ -83,11 +141,74 @@ export function SharedView() {
         </p>
       </section>
 
+      <div className="shared-filters">
+        <div className="filter-group">
+          <label htmlFor="filter-owner">Shared by</label>
+          <select
+            id="filter-owner"
+            value={filterOwner}
+            onChange={(e) => setFilterOwner(e.target.value)}
+          >
+            <option value="">All</option>
+            {uniqueOwners.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label htmlFor="filter-title">Goal title</label>
+          <input
+            id="filter-title"
+            type="text"
+            value={filterTitle}
+            onChange={(e) => setFilterTitle(e.target.value)}
+            placeholder="Search by title..."
+          />
+        </div>
+        <div className="filter-group">
+          <label htmlFor="filter-year">Year</label>
+          <select
+            id="filter-year"
+            value={filterYear}
+            onChange={(e) => {
+              const v = e.target.value
+              setFilterYear(v === '' ? '' : Number(v))
+              setFilterWeek('')
+            }}
+          >
+            <option value="">All</option>
+            {uniqueYears.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label htmlFor="filter-week">Week</label>
+          <select
+            id="filter-week"
+            value={filterWeek}
+            onChange={(e) => {
+              const v = e.target.value
+              setFilterWeek(v === '' ? '' : Number(v))
+            }}
+            disabled={filterYear === ''}
+          >
+            <option value="">All</option>
+            {weekOptions.map((w) => (
+              <option key={w} value={w}>Week {w}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="shared-layout">
         <aside className="shared-sidebar">
-          <h3>Shared Goals</h3>
+          <h3>Shared Goals {filteredGoals.length < sharedGoals.length && `(${filteredGoals.length} of ${sharedGoals.length})`}</h3>
+          {filteredGoals.length === 0 ? (
+            <p className="shared-filter-empty">No goals match the current filters.</p>
+          ) : (
           <ul className="shared-goals-list">
-            {sharedGoals.map((goal) => (
+            {filteredGoals.map((goal) => (
               <li key={goal.id}>
                 <button
                   className={`shared-goal-btn ${selectedGoal?.id === goal.id ? 'active' : ''}`}
@@ -100,6 +221,7 @@ export function SharedView() {
               </li>
             ))}
           </ul>
+          )}
         </aside>
 
         <main className="shared-content">

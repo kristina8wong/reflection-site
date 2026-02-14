@@ -205,11 +205,12 @@
 
 .hamburger-line {
   display: block;
-  width: 100%;
+  width: 18px;
   height: 2px;
   background: var(--text);
   border-radius: 1px;
   transition: transform 0.2s, opacity 0.2s;
+  align-self: center;
 }
 
 .nav-tabs {
