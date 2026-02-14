@@ -39,22 +39,88 @@
   flex-wrap: wrap;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+/* User menu - compact, right-most, click to open */
+.user-menu-wrapper {
+  position: relative;
+  margin-left: auto;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
-.user-name {
-  font-size: 0.9rem;
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.user-menu-trigger:hover {
   color: var(--text);
-  font-weight: 500;
+  background: var(--bg-card);
+}
+
+.user-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-chevron {
+  font-size: 0.6rem;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.user-menu-trigger.open .user-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  padding: 0.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 101;
+}
+
+.user-menu-email {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-menu-item:hover {
+  background: var(--bg-card);
+  color: #c97070;
 }
 
 .loading-state {
@@ -79,19 +145,12 @@
   
   .header-right {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
     min-width: 0;
   }
   
-  .year-select {
-    order: -1;
-  }
-  
   .user-name {
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 100px;
   }
 }
 
@@ -101,12 +160,13 @@
   }
   
   .user-name {
-    max-width: 80px;
+    max-width: 70px;
   }
 }
 
 .year-select,
-.nav-tab {
+.nav-tab,
+.user-menu-trigger {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

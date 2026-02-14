@@ -22,6 +22,7 @@ function AppContent() {
   const { currentUser, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('checkin')
   const [navOpen, setNavOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [goals, setGoals] = useState<Goal[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -52,13 +53,21 @@ function AppContent() {
   }, [currentUser, currentYear])
 
   useEffect(() => {
-    if (!navOpen) return
+    if (!navOpen && !userMenuOpen) return
     function handleClickOutside() {
       setNavOpen(false)
+      setUserMenuOpen(false)
     }
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
-  }, [navOpen])
+  }, [navOpen, userMenuOpen])
+
+  function handleLogoutClick() {
+    if (confirm('Are you sure you want to log out?')) {
+      setUserMenuOpen(false)
+      logout()
+    }
+  }
 
   if (!currentUser) {
     return <AuthView />
@@ -77,12 +86,6 @@ function AppContent() {
       <header className="app-header">
         <h1 className="app-title">Year Reflection</h1>
         <div className="header-right">
-          <div className="user-info">
-            <span className="user-name">{currentUser.displayName || currentUser.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>
-              Log Out
-            </button>
-          </div>
           <select
             className="year-select"
             value={currentYear}
@@ -116,6 +119,28 @@ function AppContent() {
               </button>
             ))}
           </nav>
+          <div className="user-menu-wrapper" onClick={(e) => e.stopPropagation()}>
+            <button
+              className={`user-menu-trigger ${userMenuOpen ? 'open' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setUserMenuOpen((o) => !o)
+              }}
+              aria-label="Account menu"
+              aria-expanded={userMenuOpen}
+            >
+              <span className="user-name">{currentUser.displayName || currentUser.email}</span>
+              <span className="user-menu-chevron">▼</span>
+            </button>
+            {userMenuOpen && (
+              <div className="user-menu-dropdown">
+                <div className="user-menu-email">{currentUser.email}</div>
+                <button className="user-menu-item" onClick={handleLogoutClick}>
+                  Log Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
