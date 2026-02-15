@@ -6,7 +6,7 @@ import { GoalsView } from './views/GoalsView'
 import { CheckInView } from './views/CheckInView'
 import { YearView } from './views/YearView'
 import { SharedView } from './views/SharedView'
-import { getGoalsForYear, getAllCheckInsForUser } from './firestore-storage'
+import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
 
 type Tab = 'goals' | 'checkin' | 'year' | 'shared'
@@ -49,6 +49,12 @@ function AppContent() {
   useEffect(() => {
     if (currentUser) {
       refresh()
+      // Migrate: ensure user profile has displayNameLower for search
+      if (currentUser.displayName) {
+        ensureUserProfileSearchable(currentUser.uid, currentUser.displayName).catch(() => {
+          // Ignore - profile may not exist or update may fail
+        })
+      }
     }
   }, [currentUser, currentYear])
 

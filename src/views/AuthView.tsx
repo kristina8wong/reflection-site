@@ -6,6 +6,7 @@ export function AuthView() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,7 +23,12 @@ export function AuthView() {
         await login(email, password)
       } else {
         if (!displayName.trim()) {
-          setError('Please enter your name')
+          setError('Please enter your full name')
+          setLoading(false)
+          return
+        }
+        if (password !== confirmPassword) {
+          setError('Passwords do not match')
           setLoading(false)
           return
         }
@@ -47,13 +53,13 @@ export function AuthView() {
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
             <div className="auth-field">
-              <label htmlFor="displayName">Name</label>
+              <label htmlFor="displayName">Full Name</label>
               <input
                 id="displayName"
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
+                placeholder="Your full name"
                 required={!isLogin}
               />
             </div>
@@ -84,6 +90,21 @@ export function AuthView() {
             />
           </div>
 
+          {!isLogin && (
+            <div className="auth-field">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required={!isLogin}
+                minLength={6}
+              />
+            </div>
+          )}
+
           {error && <div className="auth-error">{error}</div>}
 
           <button type="submit" className="auth-submit" disabled={loading}>
@@ -99,6 +120,7 @@ export function AuthView() {
             onClick={() => {
               setIsLogin(!isLogin)
               setError('')
+              setConfirmPassword('')
             }}
           >
             {isLogin ? 'Sign Up' : 'Log In'}

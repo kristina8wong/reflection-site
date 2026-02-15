@@ -348,7 +348,19 @@ export async function createUserProfile(
     uid,
     email: email.toLowerCase(),
     displayName,
+    displayNameLower: displayName.toLowerCase(),
     createdAt: Timestamp.now()
+  })
+}
+
+/** Ensure existing user has displayNameLower for search (migration) */
+export async function ensureUserProfileSearchable(
+  uid: string,
+  displayName: string
+): Promise<void> {
+  const userRef = doc(db, USERS_COLLECTION, uid)
+  await updateDoc(userRef, {
+    displayNameLower: displayName.toLowerCase()
   })
 }
 
@@ -359,14 +371,68 @@ export async function getUserByEmail(email: string): Promise<UserProfile | null>
   
   if (snapshot.empty) return null
   
-  const doc = snapshot.docs[0]
-  const data = doc.data()
+  const docSnap = snapshot.docs[0]
+  const data = docSnap.data()
   return {
     uid: data.uid,
     email: data.email,
     displayName: data.displayName,
     createdAt: timestampToISO(data.createdAt)
   }
+}
+
+/** Search users by name or email (partial match). Returns users whose displayName or email matches the query. */
+export async function searchUsers(queryText: string): Promise<UserProfile[]> {
+  const q = queryText.trim().toLowerCase()
+  if (q.length < 2) return []
+
+  const usersRef = collection(db, USERS_COLLECTION)
+  const seen = new Set<string>()
+  const results: UserProfile[] = []
+
+  // Search by displayNameLower (prefix match)
+  const nameQuery = query(
+    usersRef,
+    where('displayNameLower', '>=', q),
+    where('displayNameLower', '<=', q + '\uf8ff')
+  )
+  const nameSnap = await getDocs(nameQuery)
+  nameSnap.docs.forEach((docSnap) => {
+    const data = docSnap.data()
+    if (data.uid && !seen.has(data.uid)) {
+      seen.add(data.uid)
+      results.push({
+        uid: data.uid,
+        email: data.email,
+        displayName: data.displayName,
+        createdAt: timestampToISO(data.createdAt)
+      })
+    }
+  })
+
+  // Search by email (prefix match) - email is already stored lowercase
+  const emailQuery = query(
+    usersRef,
+    where('email', '>=', q),
+    where('email', '<=', q + '\uf8ff')
+  )
+  const emailSnap = await getDocs(emailQuery)
+  emailSnap.docs.forEach((docSnap) => {
+    const data = docSnap.data()
+    if (data.uid && !seen.has(data.uid)) {
+      seen.add(data.uid)
+      results.push({
+        uid: data.uid,
+        email: data.email,
+        displayName: data.displayName,
+        createdAt: timestampToISO(data.createdAt)
+      })
+    }
+  })
+
+  // Sort by displayName
+  results.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''))
+  return results
 }
 
 // ===== SHARING OPERATIONS =====
