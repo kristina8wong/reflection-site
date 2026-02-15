@@ -224,7 +224,8 @@
   gap: 0.25rem;
 }
 
-.share-item-email {
+.share-item-email,
+.share-item-name {
   font-size: 0.95rem;
   color: var(--text);
   font-weight: 500;

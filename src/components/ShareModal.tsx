@@ -46,7 +46,7 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
   const sharedWithIds = new Set(shares.map((s) => s.sharedWithId))
 
   const doSearch = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    if (q.trim().length < 1) {
       setSuggestions([])
       return
     }
@@ -163,7 +163,7 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
                   onChange={(e) => {
                     if (!selectedUser) setQuery(e.target.value)
                   }}
-                  onFocus={() => query.length >= 2 && setShowDropdown(true)}
+                  onFocus={() => query.length >= 1 && setShowDropdown(true)}
                   placeholder="Type name or email to search..."
                   disabled={loading || !!selectedUser}
                   autoComplete="off"
@@ -178,7 +178,7 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
                     ✕
                   </button>
                 )}
-                {showDropdown && (suggestions.length > 0 || loadingSearch || (query.trim().length >= 2 && !loadingSearch)) && !selectedUser && (
+                {showDropdown && (suggestions.length > 0 || loadingSearch || (query.trim().length >= 1 && !loadingSearch)) && !selectedUser && (
                   <div className="share-dropdown">
                     {loadingSearch ? (
                       <div className="share-dropdown-loading">Searching...</div>
@@ -227,7 +227,11 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
                 {shares.map((share) => (
                   <li key={share.id} className="share-item">
                     <div className="share-item-info">
-                      <span className="share-item-email">{share.sharedWithEmail}</span>
+                      <span className="share-item-name">
+                        {share.sharedWithName
+                          ? `${share.sharedWithName} (${share.sharedWithEmail})`
+                          : share.sharedWithEmail}
+                      </span>
                       <span className="share-item-date">
                         Shared {new Date(share.createdAt).toLocaleDateString()}
                       </span>

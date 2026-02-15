@@ -8,6 +8,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   Timestamp,
   writeBatch
 } from 'firebase/firestore'
@@ -381,56 +382,77 @@ export async function getUserByEmail(email: string): Promise<UserProfile | null>
   }
 }
 
+function docToUserProfile(data: Record<string, unknown>): UserProfile | null {
+  if (!data.uid) return null
+  return {
+    uid: data.uid as string,
+    email: data.email as string,
+    displayName: data.displayName as string,
+    createdAt: timestampToISO(data.createdAt)
+  }
+}
+
 /** Search users by name or email (partial match). Returns users whose displayName or email matches the query. */
 export async function searchUsers(queryText: string): Promise<UserProfile[]> {
   const q = queryText.trim().toLowerCase()
-  if (q.length < 2) return []
+  if (q.length < 1) return []
 
   const usersRef = collection(db, USERS_COLLECTION)
   const seen = new Set<string>()
   const results: UserProfile[] = []
 
-  // Search by displayNameLower (prefix match)
+  // 1. Try index-based prefix queries (efficient, works for users with displayNameLower)
   const nameQuery = query(
     usersRef,
     where('displayNameLower', '>=', q),
-    where('displayNameLower', '<=', q + '\uf8ff')
+    where('displayNameLower', '<=', q + '\uf8ff'),
+    limit(20)
   )
-  const nameSnap = await getDocs(nameQuery)
-  nameSnap.docs.forEach((docSnap) => {
-    const data = docSnap.data()
-    if (data.uid && !seen.has(data.uid)) {
-      seen.add(data.uid)
-      results.push({
-        uid: data.uid,
-        email: data.email,
-        displayName: data.displayName,
-        createdAt: timestampToISO(data.createdAt)
-      })
-    }
-  })
-
-  // Search by email (prefix match) - email is already stored lowercase
   const emailQuery = query(
     usersRef,
     where('email', '>=', q),
-    where('email', '<=', q + '\uf8ff')
+    where('email', '<=', q + '\uf8ff'),
+    limit(20)
   )
-  const emailSnap = await getDocs(emailQuery)
-  emailSnap.docs.forEach((docSnap) => {
-    const data = docSnap.data()
-    if (data.uid && !seen.has(data.uid)) {
-      seen.add(data.uid)
-      results.push({
-        uid: data.uid,
-        email: data.email,
-        displayName: data.displayName,
-        createdAt: timestampToISO(data.createdAt)
-      })
-    }
-  })
 
-  // Sort by displayName
+  try {
+    const [nameSnap, emailSnap] = await Promise.all([getDocs(nameQuery), getDocs(emailQuery)])
+    for (const docSnap of [...nameSnap.docs, ...emailSnap.docs]) {
+      const data = docSnap.data()
+      if (data.uid && !seen.has(data.uid)) {
+        seen.add(data.uid)
+        const user = docToUserProfile(data)
+        if (user) results.push(user)
+      }
+    }
+  } catch {
+    // Index may not exist; fall through to fetch-and-filter
+  }
+
+  // 2. If no results (e.g. users without displayNameLower, or substring/match needs),
+  //    fetch users and filter in memory. Supports "Test User" → finds "Test User"
+  if (results.length === 0) {
+    const queryWords = q.split(/\s+/).filter(Boolean)
+    const usersQuery = query(usersRef, orderBy('email'), limit(500))
+    const snapshot = await getDocs(usersQuery)
+
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data()
+      const displayNameLower = (data.displayName || data.displayNameLower || '').toLowerCase()
+      const emailLower = (data.email || '').toLowerCase()
+
+      const matches =
+        displayNameLower.includes(q) ||
+        emailLower.includes(q) ||
+        queryWords.every((w) => displayNameLower.includes(w) || emailLower.includes(w))
+
+      if (matches && data.uid) {
+        const user = docToUserProfile(data)
+        if (user) results.push(user)
+      }
+    }
+  }
+
   results.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''))
   return results
 }
@@ -443,6 +465,7 @@ export interface Share {
   ownerName: string
   sharedWithId: string
   sharedWithEmail: string
+  sharedWithName?: string
   goalId: string
   goalTitle: string
   createdAt: string
@@ -497,6 +520,7 @@ export async function shareGoal(
       ownerName,
       sharedWithId: user.uid,
       sharedWithEmail: user.email,
+      sharedWithName: user.displayName || null,
       goalId,
       goalTitle,
       createdAt: Timestamp.now()
@@ -531,6 +555,7 @@ export async function getSharesForGoal(goalId: string, ownerId: string): Promise
       ownerName: data.ownerName,
       sharedWithId: data.sharedWithId,
       sharedWithEmail: data.sharedWithEmail,
+      sharedWithName: data.sharedWithName ?? null,
       goalId: data.goalId,
       goalTitle: data.goalTitle,
       createdAt: timestampToISO(data.createdAt)
