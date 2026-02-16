@@ -61,18 +61,25 @@ function AppContent() {
           // Ignore - profile may not exist or update may fail
         })
       }
-      // Check if first-time user (never seen tutorial)
-      try {
-        const key = `year-reflection-tutorial-${currentUser.uid}`
-        const seen = localStorage.getItem(key)
-        setShowTutorial(seen !== '1')
-      } catch {
-        setShowTutorial(false)
-      }
     } else {
       setShowTutorial(null)
     }
   }, [currentUser, currentYear])
+
+  // Show tutorial after data loads: new users (no goals/check-ins) or never seen
+  useEffect(() => {
+    if (!currentUser || loading) return
+
+    try {
+      const key = `year-reflection-tutorial-${currentUser.uid}`
+      const seen = localStorage.getItem(key)
+      const hasNoData = goals.length === 0 && checkIns.length === 0
+      const shouldShow = seen !== '1' || hasNoData
+      setShowTutorial(shouldShow)
+    } catch {
+      setShowTutorial(false)
+    }
+  }, [currentUser, loading, goals, checkIns])
 
   useEffect(() => {
     if (!navOpen && !userMenuOpen) return
