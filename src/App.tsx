@@ -116,8 +116,8 @@ function AppContent() {
   }
 
   const thisYear = new Date().getFullYear()
-  const PAST_YEARS = 5
-  const FUTURE_YEARS = 10
+  const PAST_YEARS = 2
+  const FUTURE_YEARS = 15
   const yearOptions = Array.from(
     { length: PAST_YEARS + FUTURE_YEARS + 1 },
     (_, i) => thisYear - PAST_YEARS + i
