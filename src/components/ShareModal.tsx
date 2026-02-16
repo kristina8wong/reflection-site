@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Goal } from '../types'
-import { shareGoal, getSharesForGoal, unshareGoal, searchUsers, type Share } from '../firestore-storage'
+import {
+  shareGoal,
+  getSharesForGoal,
+  unshareGoal,
+  updateShareAccessLevel,
+  searchUsers,
+  type Share,
+  type ShareAccessLevel
+} from '../firestore-storage'
 import type { UserProfile } from '../firestore-storage'
 import { useAuth } from '../contexts/AuthContext'
 import './CheckInModal.css'
@@ -17,6 +25,7 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
   const [suggestions, setSuggestions] = useState<UserProfile[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+  const [accessLevel, setAccessLevel] = useState<ShareAccessLevel>('view')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -108,13 +117,14 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
       currentUser.displayName || currentUser.email || 'Unknown',
       selectedUser.email,
       goal.id,
-      goal.title
+      goal.title,
+      accessLevel
     )
 
     setLoading(false)
 
     if (result.success) {
-      setSuccess(`Goal shared with ${selectedUser.displayName || selectedUser.email}`)
+      setSuccess(`Goal shared with ${selectedUser.displayName || selectedUser.email} (${accessLevel} access)`)
       setSelectedUser(null)
       loadShares()
     } else {
@@ -131,6 +141,16 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
       loadShares()
     } catch (err) {
       setError('Failed to remove access')
+    }
+  }
+
+  async function handleChangeAccess(shareId: string, newLevel: ShareAccessLevel) {
+    try {
+      await updateShareAccessLevel(shareId, newLevel)
+      setSuccess('Access updated')
+      loadShares()
+    } catch (err) {
+      setError('Failed to update access')
     }
   }
 
@@ -203,6 +223,33 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
                   </div>
                 )}
               </div>
+              {selectedUser && (
+              <div className="share-field share-access-field">
+                <label>Access level</label>
+                <div className="share-access-options">
+                  <label className="share-access-option">
+                    <input
+                      type="radio"
+                      name="accessLevel"
+                      value="view"
+                      checked={accessLevel === 'view'}
+                      onChange={() => setAccessLevel('view')}
+                    />
+                    View only
+                  </label>
+                  <label className="share-access-option">
+                    <input
+                      type="radio"
+                      name="accessLevel"
+                      value="edit"
+                      checked={accessLevel === 'edit'}
+                      onChange={() => setAccessLevel('edit')}
+                    />
+                    Can edit check-ins
+                  </label>
+                </div>
+              </div>
+            )}
               <button
                 type="submit"
                 className="btn-primary share-submit-btn"
@@ -234,6 +281,17 @@ export function ShareModal({ goal, onClose }: ShareModalProps) {
                       </span>
                       <span className="share-item-date">
                         Shared {new Date(share.createdAt).toLocaleDateString()}
+                        {' · '}
+                        <select
+                          className="share-access-select"
+                          value={share.accessLevel ?? 'view'}
+                          onChange={(e) =>
+                            handleChangeAccess(share.id, e.target.value as ShareAccessLevel)
+                          }
+                        >
+                          <option value="view">View only</option>
+                          <option value="edit">Can edit</option>
+                        </select>
                       </span>
                     </div>
                     <button

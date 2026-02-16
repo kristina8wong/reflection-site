@@ -459,6 +459,8 @@ export async function searchUsers(queryText: string): Promise<UserProfile[]> {
 
 // ===== SHARING OPERATIONS =====
 
+export type ShareAccessLevel = 'view' | 'edit'
+
 export interface Share {
   id: string
   ownerId: string
@@ -466,6 +468,7 @@ export interface Share {
   sharedWithId: string
   sharedWithEmail: string
   sharedWithName?: string
+  accessLevel: ShareAccessLevel
   goalId: string
   goalTitle: string
   createdAt: string
@@ -476,7 +479,8 @@ export async function shareGoal(
   ownerName: string,
   sharedWithEmail: string,
   goalId: string,
-  goalTitle: string
+  goalTitle: string,
+  accessLevel: ShareAccessLevel = 'view'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Look up user by email
@@ -521,6 +525,7 @@ export async function shareGoal(
       sharedWithId: user.uid,
       sharedWithEmail: user.email,
       sharedWithName: user.displayName || null,
+      accessLevel,
       goalId,
       goalTitle,
       createdAt: Timestamp.now()
@@ -536,6 +541,14 @@ export async function shareGoal(
 export async function unshareGoal(shareId: string): Promise<void> {
   const shareRef = doc(db, SHARES_COLLECTION, shareId)
   await deleteDoc(shareRef)
+}
+
+export async function updateShareAccessLevel(
+  shareId: string,
+  accessLevel: ShareAccessLevel
+): Promise<void> {
+  const shareRef = doc(db, SHARES_COLLECTION, shareId)
+  await updateDoc(shareRef, { accessLevel })
 }
 
 export async function getSharesForGoal(goalId: string, ownerId: string): Promise<Share[]> {
@@ -556,6 +569,7 @@ export async function getSharesForGoal(goalId: string, ownerId: string): Promise
       sharedWithId: data.sharedWithId,
       sharedWithEmail: data.sharedWithEmail,
       sharedWithName: data.sharedWithName ?? null,
+      accessLevel: (data.accessLevel as ShareAccessLevel) ?? 'view',
       goalId: data.goalId,
       goalTitle: data.goalTitle,
       createdAt: timestampToISO(data.createdAt)
@@ -563,36 +577,42 @@ export async function getSharesForGoal(goalId: string, ownerId: string): Promise
   })
 }
 
-export async function getSharedGoals(userId: string): Promise<Array<Goal & { ownerName: string; shareId: string }>> {
+export async function getSharedGoals(
+  userId: string
+): Promise<Array<Goal & { ownerName: string; shareId: string; accessLevel: ShareAccessLevel }>> {
   const sharesRef = collection(db, SHARES_COLLECTION)
   const q = query(sharesRef, where('sharedWithId', '==', userId))
   const snapshot = await getDocs(q)
-  
-  const goalIds = snapshot.docs.map(doc => doc.data().goalId)
+
+  const goalIds = snapshot.docs.map((doc) => doc.data().goalId)
   if (goalIds.length === 0) return []
-  
-  // Create a map of goalId to share info
-  const shareMap = new Map<string, { ownerName: string; shareId: string }>()
-  snapshot.docs.forEach(doc => {
+
+  const shareMap = new Map<
+    string,
+    { ownerName: string; shareId: string; accessLevel: ShareAccessLevel }
+  >()
+  snapshot.docs.forEach((doc) => {
     const data = doc.data()
     shareMap.set(data.goalId, {
       ownerName: data.ownerName,
-      shareId: doc.id
+      shareId: doc.id,
+      accessLevel: (data.accessLevel as ShareAccessLevel) ?? 'view'
     })
   })
-  
-  // Get the actual goals (in batches of 10)
-  const allGoals: Array<Goal & { ownerName: string; shareId: string }> = []
+
+  const allGoals: Array<
+    Goal & { ownerName: string; shareId: string; accessLevel: ShareAccessLevel }
+  > = []
   for (let i = 0; i < goalIds.length; i += 10) {
     const batch = goalIds.slice(i, i + 10)
     const goalsRef = collection(db, GOALS_COLLECTION)
     const goalsQuery = query(goalsRef, where('__name__', 'in', batch))
     const goalsSnapshot = await getDocs(goalsQuery)
-    
-    const goals = goalsSnapshot.docs.map((doc) => {
+
+    goalsSnapshot.docs.forEach((doc) => {
       const data = doc.data()
       const shareInfo = shareMap.get(doc.id)!
-      return {
+      allGoals.push({
         id: doc.id,
         title: data.title,
         description: data.description,
@@ -600,13 +620,12 @@ export async function getSharedGoals(userId: string): Promise<Array<Goal & { own
         order: data.order ?? 0,
         createdAt: timestampToISO(data.createdAt),
         ownerName: shareInfo.ownerName,
-        shareId: shareInfo.shareId
-      }
+        shareId: shareInfo.shareId,
+        accessLevel: shareInfo.accessLevel
+      })
     })
-    
-    allGoals.push(...goals)
   }
-  
+
   return allGoals
 }
 

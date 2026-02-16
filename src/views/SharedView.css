@@ -315,6 +315,17 @@
   pointer-events: none;
 }
 
+.year-bubble-cell.clickable,
+.shared-year-cell.clickable {
+  cursor: pointer;
+}
+
+.year-bubble-cell.clickable:hover,
+.shared-year-cell.clickable:hover {
+  background: var(--bg);
+  border-radius: 4px;
+}
+
 /* By User: grouped check-in view */
 .shared-user-checkin-section {
   margin-top: 2rem;
@@ -554,6 +565,10 @@
 .shared-checkin-date {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.shared-checkin-card .btn-ghost {
+  margin-top: 0.75rem;
 }
 
 @media (max-width: 640px) {

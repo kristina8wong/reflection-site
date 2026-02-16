@@ -128,6 +128,39 @@
   color: var(--text-muted);
 }
 
+.share-access-field {
+  margin-bottom: 0.75rem;
+}
+
+.share-access-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.share-access-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.share-access-select {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  margin-left: 0.25rem;
+}
+
+.share-access-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .share-submit-btn {
   width: 100%;
 }

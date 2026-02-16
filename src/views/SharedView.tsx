@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getSharedGoals, getCheckInsForSharedGoal } from '../firestore-storage'
+import { CheckInModal } from '../components/CheckInModal'
 import type { Goal, CheckIn } from '../types'
 import {
   getWeeksInYear,
@@ -18,6 +19,7 @@ import './CheckInView.css'
 interface SharedGoal extends Goal {
   ownerName: string
   shareId: string
+  accessLevel: 'view' | 'edit'
 }
 
 const WEEK_CELL_WIDTH = 36
@@ -27,9 +29,11 @@ const GOAL_LABEL_WIDTH = 180
 function SharedUserYearTimeline({
   goals,
   checkInsByGoal,
+  onBubbleClick,
 }: {
   goals: SharedGoal[]
   checkInsByGoal: Record<string, CheckIn[]>
+  onBubbleClick?: (goal: SharedGoal, week: number) => void
 }) {
   const goalsByYear = useMemo(() => {
     const byYear = new Map<number, SharedGoal[]>()
@@ -113,12 +117,15 @@ function SharedUserYearTimeline({
                       const hasReflection = ci && ci.reflection.trim().length > 0
                       const hasRating = ci && ci.progressRating != null
                       const filled = hasReflection || hasRating
+                      const canEdit = goal.accessLevel === 'edit' && onBubbleClick
                       return (
                         <div
                           key={week}
-                          className={`year-bubble-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''}`}
+                          className={`year-bubble-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''} ${canEdit ? 'clickable' : ''}`}
                           style={{ gridRow, gridColumn: week + 1 }}
                           title={formatWeekRange(week, year)}
+                          role={canEdit ? 'button' : undefined}
+                          onClick={canEdit ? () => onBubbleClick(goal, week) : undefined}
                         >
                           <span className={`week-dot ${filled ? 'filled' : ''}`}>
                             {filled ? (hasRating ? ci!.progressRating : '•') : null}
@@ -153,6 +160,7 @@ function SharedUserCheckInView({
   onYearChange,
   onWeekChange,
   onFocusGoal,
+  onEditCheckIn,
 }: {
   goals: SharedGoal[]
   checkInsByGoal: Record<string, CheckIn[]>
@@ -161,6 +169,7 @@ function SharedUserCheckInView({
   onYearChange: (y: number) => void
   onWeekChange: (w: number) => void
   onFocusGoal: (goal: SharedGoal) => void
+  onEditCheckIn?: (goal: SharedGoal, week: number) => void
 }) {
   const yearGoals = goals.filter((g) => g.year === selectedYear).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   const totalWeeks = getWeeksInYear(selectedYear)
@@ -228,11 +237,16 @@ function SharedUserCheckInView({
         {sortedGoals.map((goal) => {
           const ci = getCheckIn(goal.id, selectedWeek, selectedYear)
           const isPending = !ci
+          const canEdit = goal.accessLevel === 'edit'
           return (
             <li
               key={goal.id}
               className={`goal-card checkin-card ${isPending ? 'checkin-card-pending' : 'checkin-card-completed'} shared-user-checkin-card`}
-              onClick={() => onFocusGoal(goal)}
+              onClick={() =>
+                canEdit && onEditCheckIn
+                  ? onEditCheckIn(goal, selectedWeek)
+                  : onFocusGoal(goal)
+              }
             >
               <div className="goal-content checkin-goal-content">
                 <h3>{goal.title}</h3>
@@ -262,7 +276,17 @@ function SharedUserCheckInView({
                 )}
               </div>
               <div className="goal-actions">
-                <button className="btn-ghost btn-sm shared-checkin-view-details">View details</button>
+                <button
+                  className="btn-ghost btn-sm shared-checkin-view-details"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    canEdit && onEditCheckIn
+                      ? onEditCheckIn(goal, selectedWeek)
+                      : onFocusGoal(goal)
+                  }}
+                >
+                  {canEdit ? 'Edit' : 'View details'}
+                </button>
               </div>
             </li>
           )
@@ -272,7 +296,15 @@ function SharedUserCheckInView({
   )
 }
 
-function SharedGoalYearGrid({ goal, checkIns }: { goal: SharedGoal; checkIns: CheckIn[] }) {
+function SharedGoalYearGrid({
+  goal,
+  checkIns,
+  onBubbleClick,
+}: {
+  goal: SharedGoal
+  checkIns: CheckIn[]
+  onBubbleClick?: (week: number) => void
+}) {
   const year = goal.year
   const totalWeeks = getWeeksInYear(year)
   const goalCheckIns = checkIns.filter((c) => c.goalId === goal.id && c.year === year)
@@ -314,11 +346,14 @@ function SharedGoalYearGrid({ goal, checkIns }: { goal: SharedGoal; checkIns: Ch
         const hasReflection = ci && ci.reflection.trim().length > 0
         const hasRating = ci && ci.progressRating != null
         const filled = hasReflection || hasRating
+        const canEdit = goal.accessLevel === 'edit' && onBubbleClick
         return (
           <div
             key={week}
-            className={`shared-year-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''}`}
+            className={`shared-year-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''} ${canEdit ? 'clickable' : ''}`}
             title={`Week ${week}: ${formatWeekRangeShort(week, year)}`}
+            role={canEdit ? 'button' : undefined}
+            onClick={canEdit ? () => onBubbleClick(week) : undefined}
           >
             <span className={`week-dot ${filled ? 'filled' : ''}`}>
               {filled ? (hasRating ? ci!.progressRating : '•') : null}
@@ -343,6 +378,9 @@ export function SharedView() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [sharedUserSelectedYear, setSharedUserSelectedYear] = useState<number>(() => new Date().getFullYear())
   const [sharedUserSelectedWeek, setSharedUserSelectedWeek] = useState<number>(() => getWeekOfYear(new Date()))
+  const [editModalGoal, setEditModalGoal] = useState<SharedGoal | null>(null)
+  const [editModalWeek, setEditModalWeek] = useState<number | null>(null)
+  const [editModalYear, setEditModalYear] = useState<number | null>(null)
 
   // Filters
   const [filterOwner, setFilterOwner] = useState<string>('')
@@ -485,6 +523,29 @@ export function SharedView() {
     setSelectedGoal(goal)
     setCheckIns(checkInsByGoal[goal.id] ?? [])
     setCheckInsVisibleCount(3)
+  }
+
+  function handleOpenEditModal(goal: SharedGoal, week: number, year?: number) {
+    setEditModalGoal(goal)
+    setEditModalWeek(week)
+    setEditModalYear(year ?? goal.year)
+  }
+
+  function handleCloseEditModal() {
+    setEditModalGoal(null)
+    setEditModalWeek(null)
+    setEditModalYear(null)
+  }
+
+  async function handleEditModalSave() {
+    if (editModalGoal) {
+      const cis = await getCheckInsForSharedGoal(editModalGoal.id)
+      setCheckInsByGoal((prev) => ({ ...prev, [editModalGoal.id]: cis }))
+      if (selectedGoal?.id === editModalGoal.id) {
+        setCheckIns(cis)
+      }
+    }
+    handleCloseEditModal()
   }
 
   const displayedCheckIns = useMemo(() => {
@@ -670,7 +731,13 @@ export function SharedView() {
                   <span className="shared-detail-year">{goalsForSelectedUser.length} goal{goalsForSelectedUser.length !== 1 ? 's' : ''}</span>
                 </header>
                 <div className="shared-user-year-overview">
-                  <SharedUserYearTimeline goals={goalsForSelectedUser} checkInsByGoal={checkInsByGoal} />
+                  <SharedUserYearTimeline
+                  goals={goalsForSelectedUser}
+                  checkInsByGoal={checkInsByGoal}
+                  onBubbleClick={(goal, week) =>
+                    handleOpenEditModal(goal, week, goal.year)
+                  }
+                />
                 </div>
                 <div className="shared-user-checkin-section">
                   <SharedUserCheckInView
@@ -681,6 +748,9 @@ export function SharedView() {
                     onYearChange={setSharedUserSelectedYear}
                     onWeekChange={setSharedUserSelectedWeek}
                     onFocusGoal={handleFocusGoal}
+                    onEditCheckIn={(goal, week) =>
+                      handleOpenEditModal(goal, week, sharedUserSelectedYear)
+                    }
                   />
                 </div>
               </div>
@@ -711,6 +781,12 @@ export function SharedView() {
                 <SharedGoalYearGrid
                   goal={selectedGoal}
                   checkIns={checkIns}
+                  onBubbleClick={
+                    selectedGoal.accessLevel === 'edit'
+                      ? (week) =>
+                          handleOpenEditModal(selectedGoal, week, selectedGoal.year)
+                      : undefined
+                  }
                 />
               </div>
 
@@ -745,6 +821,20 @@ export function SharedView() {
                           <div className="shared-checkin-date">
                             {new Date(checkIn.createdAt).toLocaleDateString()}
                           </div>
+                          {selectedGoal.accessLevel === 'edit' && (
+                            <button
+                              className="btn-ghost btn-sm"
+                              onClick={() =>
+                                handleOpenEditModal(
+                                  selectedGoal,
+                                  checkIn.weekNumber,
+                                  checkIn.year
+                                )
+                              }
+                            >
+                              Edit
+                            </button>
+                          )}
                         </div>
                       ))}
                   </div>
@@ -772,6 +862,17 @@ export function SharedView() {
           )}
         </main>
       </div>
+
+      {editModalGoal && editModalWeek != null && editModalYear != null && (
+        <CheckInModal
+          goal={editModalGoal}
+          checkIns={checkInsByGoal[editModalGoal.id] ?? []}
+          weekNumber={editModalWeek}
+          year={editModalYear}
+          onClose={handleCloseEditModal}
+          onSave={handleEditModalSave}
+        />
+      )}
     </div>
   )
 }
