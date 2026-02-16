@@ -17,7 +17,11 @@ export type ColorScheme =
   | 'rose'
   | 'coral'
 
-const STORAGE_KEY = 'year-reflection-color-scheme'
+const STORAGE_KEY_PREFIX = 'year-reflection-color-scheme'
+
+function getStorageKey(userId?: string): string {
+  return userId ? `${STORAGE_KEY_PREFIX}-${userId}` : STORAGE_KEY_PREFIX
+}
 
 const VALID_SCHEMES: ColorScheme[] = [
   'gold',
@@ -49,9 +53,10 @@ interface ThemeProviderProps {
   userId?: string
 }
 
-function loadStoredScheme(): ColorScheme {
+function loadStoredScheme(userId?: string): ColorScheme {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const key = getStorageKey(userId)
+    const stored = localStorage.getItem(key)
     if (stored && VALID_SCHEMES.includes(stored as ColorScheme)) {
       return stored as ColorScheme
     }
@@ -62,16 +67,21 @@ function loadStoredScheme(): ColorScheme {
 }
 
 export function ThemeProvider({ children, userId }: ThemeProviderProps) {
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(loadStoredScheme)
-  // Load color scheme from Firestore when user logs in
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(() => loadStoredScheme(userId))
+  // Load color scheme from Firestore when user logs in; use per-user localStorage as fallback
   useEffect(() => {
     if (!userId) return
     let cancelled = false
+    // First try per-user localStorage (instant, works offline)
+    const stored = loadStoredScheme(userId)
+    if (stored !== 'gold') {
+      setColorSchemeState(stored)
+    }
     getUserColorScheme(userId).then((scheme) => {
       if (!cancelled && scheme && VALID_SCHEMES.includes(scheme as ColorScheme)) {
         setColorSchemeState(scheme as ColorScheme)
         try {
-          localStorage.setItem(STORAGE_KEY, scheme)
+          localStorage.setItem(getStorageKey(userId), scheme)
         } catch {
           // ignore
         }
@@ -83,11 +93,13 @@ export function ThemeProvider({ children, userId }: ThemeProviderProps) {
   useLayoutEffect(() => {
     document.documentElement.setAttribute('data-theme', colorScheme)
     try {
-      localStorage.setItem(STORAGE_KEY, colorScheme)
+      if (userId) {
+        localStorage.setItem(getStorageKey(userId), colorScheme)
+      }
     } catch {
       // ignore
     }
-  }, [colorScheme])
+  }, [colorScheme, userId])
 
   function setColorScheme(scheme: ColorScheme) {
     setColorSchemeState(scheme)

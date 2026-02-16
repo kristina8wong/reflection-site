@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode
 } from 'react'
 
@@ -41,14 +42,24 @@ interface TutorialProviderProps {
   children: ReactNode
   active: boolean
   onComplete: () => void
+  /** When true, skip the menu-btn step (e.g. on desktop where hamburger is hidden) */
+  skipMenuStep?: boolean
 }
 
 export function TutorialProvider({
   children,
   active,
   onComplete,
+  skipMenuStep = false,
 }: TutorialProviderProps) {
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(skipMenuStep ? 1 : 0)
+
+  // When tutorial becomes active, ensure we start at the right step (skip menu on desktop)
+  useEffect(() => {
+    if (active) {
+      setStep(skipMenuStep ? 1 : 0)
+    }
+  }, [active, skipMenuStep])
 
   const advance = useCallback(() => {
     setStep((s) => {

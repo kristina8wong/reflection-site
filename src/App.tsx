@@ -23,9 +23,20 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'shared', label: 'Shared' },
 ]
 
+const HAMBURGER_BREAKPOINT = 768
+
 function AppContent() {
   const { currentUser, logout } = useAuth()
   const tutorial = useTutorial()
+  const [hamburgerVisible, setHamburgerVisible] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= HAMBURGER_BREAKPOINT
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${HAMBURGER_BREAKPOINT}px)`)
+    const handler = () => setHamburgerVisible(mq.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
   const [activeTab, setActiveTab] = useState<Tab>('checkin')
   const [navOpen, setNavOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -69,20 +80,19 @@ function AppContent() {
     }
   }, [currentUser, currentYear])
 
-  // Show tutorial after data loads: new users (no goals/check-ins) or never seen
+  // Show tutorial only if user hasn't completed it (never re-show after completion)
   useEffect(() => {
     if (!currentUser || loading) return
 
     try {
       const key = `year-reflection-tutorial-${currentUser.uid}`
       const seen = localStorage.getItem(key)
-      const hasNoData = goals.length === 0 && checkIns.length === 0
-      const shouldShow = seen !== '1' || hasNoData
+      const shouldShow = seen !== '1'
       setShowTutorial(shouldShow)
     } catch {
       setShowTutorial(false)
     }
-  }, [currentUser, loading, goals, checkIns])
+  }, [currentUser, loading])
 
   useEffect(() => {
     if (!navOpen && !userMenuOpen) return
@@ -106,7 +116,12 @@ function AppContent() {
   }
 
   const thisYear = new Date().getFullYear()
-  const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
+  const PAST_YEARS = 5
+  const FUTURE_YEARS = 10
+  const yearOptions = Array.from(
+    { length: PAST_YEARS + FUTURE_YEARS + 1 },
+    (_, i) => thisYear - PAST_YEARS + i
+  )
 
   function handleTabSelect(tab: Tab) {
     tutorial?.onTabSelect?.(tab)
@@ -129,6 +144,7 @@ function AppContent() {
     <TutorialProvider
       active={showTutorial === true}
       onComplete={handleTutorialComplete}
+      skipMenuStep={!hamburgerVisible}
     >
     <div className="app">
       <header className="app-header">
