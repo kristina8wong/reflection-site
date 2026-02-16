@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   updateDoc,
@@ -363,6 +364,20 @@ export async function ensureUserProfileSearchable(
   await updateDoc(userRef, {
     displayNameLower: displayName.toLowerCase()
   })
+}
+
+const VALID_COLOR_SCHEMES = ['gold', 'red-green', 'teal', 'blue', 'purple', 'rose', 'coral'] as const
+
+export async function getUserColorScheme(userId: string): Promise<string | null> {
+  const userRef = doc(db, USERS_COLLECTION, userId)
+  const snap = await getDoc(userRef)
+  const scheme = snap.data()?.colorScheme
+  return typeof scheme === 'string' && VALID_COLOR_SCHEMES.includes(scheme as any) ? scheme : null
+}
+
+export async function saveUserColorScheme(userId: string, colorScheme: string): Promise<void> {
+  const userRef = doc(db, USERS_COLLECTION, userId)
+  await setDoc(userRef, { colorScheme }, { merge: true })
 }
 
 export async function getUserByEmail(email: string): Promise<UserProfile | null> {

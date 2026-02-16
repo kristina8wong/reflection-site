@@ -3,8 +3,10 @@ import {
   useContext,
   useState,
   useLayoutEffect,
+  useEffect,
   ReactNode
 } from 'react'
+import { getUserColorScheme, saveUserColorScheme } from '../firestore-storage'
 
 export type ColorScheme =
   | 'gold'
@@ -44,6 +46,7 @@ export function useTheme() {
 
 interface ThemeProviderProps {
   children: ReactNode
+  userId?: string
 }
 
 function loadStoredScheme(): ColorScheme {
@@ -58,8 +61,24 @@ function loadStoredScheme(): ColorScheme {
   return 'gold'
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children, userId }: ThemeProviderProps) {
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(loadStoredScheme)
+  // Load color scheme from Firestore when user logs in
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    getUserColorScheme(userId).then((scheme) => {
+      if (!cancelled && scheme && VALID_SCHEMES.includes(scheme as ColorScheme)) {
+        setColorSchemeState(scheme as ColorScheme)
+        try {
+          localStorage.setItem(STORAGE_KEY, scheme)
+        } catch {
+          // ignore
+        }
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [userId])
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute('data-theme', colorScheme)
@@ -72,6 +91,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   function setColorScheme(scheme: ColorScheme) {
     setColorSchemeState(scheme)
+    if (userId) {
+      saveUserColorScheme(userId, scheme).catch(() => {
+        // ignore - localStorage still saved
+      })
+    }
   }
 
   return (

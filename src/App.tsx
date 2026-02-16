@@ -10,6 +10,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { AddToHomeScreenModal } from './components/AddToHomeScreenModal'
 import { TutorialWalkthrough } from './components/TutorialWalkthrough'
 import { TutorialProvider, useTutorial } from './contexts/TutorialContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
 
@@ -274,7 +275,16 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProviderWrapper />
     </AuthProvider>
+  )
+}
+
+function ThemeProviderWrapper() {
+  const { currentUser } = useAuth()
+  return (
+    <ThemeProvider userId={currentUser?.uid ?? undefined}>
+      <AppContent />
+    </ThemeProvider>
   )
 }

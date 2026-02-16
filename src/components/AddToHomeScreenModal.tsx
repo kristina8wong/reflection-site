@@ -34,48 +34,46 @@ export function AddToHomeScreenModal({ onClose }: AddToHomeScreenModalProps) {
           </button>
         </header>
         <div className="modal-body">
-          <p className="add-to-homescreen-intro">
-            Install this app for quick access and a full-screen experience.
-          </p>
-
-          {ios && (
+          {!mobile ? (
+            <>
+              <p className="add-to-homescreen-intro">
+                On mobile? Add this to your home screen for quick access.
+              </p>
+              <div className="add-to-homescreen-steps">
+                <h4>On iOS</h4>
+                <ol>
+                  <li>Open this page in <strong>Safari</strong></li>
+                  <li>Tap the share button in the toolbar (square with arrow up)</li>
+                  <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;</li>
+                </ol>
+              </div>
+              <div className="add-to-homescreen-steps">
+                <h4>On Android</h4>
+                <ol>
+                  <li>Open this page in <strong>Chrome</strong></li>
+                  <li>Tap the three-dot menu in the top right</li>
+                  <li>Tap &ldquo;Add to Home screen&rdquo; or &ldquo;Install app&rdquo;</li>
+                </ol>
+              </div>
+            </>
+          ) : ios ? (
             <div className="add-to-homescreen-steps">
               <h4>On iOS</h4>
               <ol>
-                <li>
-                  Open this page in <strong>Safari</strong>
-                </li>
-                <li>
-                  Tap the <span className="share-icon" aria-hidden> share</span> button in the toolbar (square with arrow pointing up)
-                </li>
-                <li>
-                  Scroll down and tap &ldquo;Add to Home Screen&rdquo;
-                </li>
+                <li>Open this page in <strong>Safari</strong></li>
+                <li>Tap the share button in the toolbar (square with arrow up)</li>
+                <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;</li>
               </ol>
             </div>
-          )}
-
-          {android && (
+          ) : (
             <div className="add-to-homescreen-steps">
               <h4>On Android</h4>
               <ol>
-                <li>
-                  Open this page in <strong>Chrome</strong>
-                </li>
-                <li>
-                  Tap the three-dot menu in the top right corner
-                </li>
-                <li>
-                  Tap &ldquo;Add to Home screen&rdquo; or &ldquo;Install app&rdquo;
-                </li>
+                <li>Open this page in <strong>Chrome</strong></li>
+                <li>Tap the three-dot menu in the top right corner</li>
+                <li>Tap &ldquo;Add to Home screen&rdquo; or &ldquo;Install app&rdquo;</li>
               </ol>
             </div>
-          )}
-
-          {!mobile && (
-            <p className="add-to-homescreen-desktop muted">
-              On desktop, look for the install icon in your browser&apos;s address bar (Chrome, Edge) to add this app.
-            </p>
           )}
         </div>
         <footer className="modal-footer">
