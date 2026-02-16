@@ -148,6 +148,7 @@ export function YearView({
 
       <div
         className="year-timeline"
+        data-tutorial-target="year-grid"
         style={{
           gridTemplateColumns: `${GOAL_LABEL_WIDTH}px repeat(${totalWeeks}, ${WEEK_CELL_WIDTH}px)`,
           gap: `${CELL_GAP}px`,

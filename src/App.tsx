@@ -8,7 +8,8 @@ import { YearView } from './views/YearView'
 import { SharedView } from './views/SharedView'
 import { SettingsModal } from './components/SettingsModal'
 import { AddToHomeScreenModal } from './components/AddToHomeScreenModal'
-import { WelcomeTutorial } from './components/WelcomeTutorial'
+import { TutorialWalkthrough } from './components/TutorialWalkthrough'
+import { TutorialProvider, useTutorial } from './contexts/TutorialContext'
 import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
 
@@ -23,6 +24,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 function AppContent() {
   const { currentUser, logout } = useAuth()
+  const tutorial = useTutorial()
   const [activeTab, setActiveTab] = useState<Tab>('checkin')
   const [navOpen, setNavOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -106,6 +108,7 @@ function AppContent() {
   const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
 
   function handleTabSelect(tab: Tab) {
+    tutorial?.onTabSelect?.(tab)
     setActiveTab(tab)
     setNavOpen(false)
   }
@@ -122,6 +125,10 @@ function AppContent() {
   }
 
   return (
+    <TutorialProvider
+      active={showTutorial === true}
+      onComplete={handleTutorialComplete}
+    >
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">Year Reflection</h1>
@@ -137,8 +144,10 @@ function AppContent() {
           </select>
           <button
             className="nav-hamburger"
+            data-tutorial-target="menu-btn"
             onClick={(e) => {
               e.stopPropagation()
+              tutorial?.onMenuClick?.()
               setNavOpen((o) => !o)
             }}
             aria-label={navOpen ? 'Close menu' : 'Open menu'}
@@ -153,6 +162,7 @@ function AppContent() {
               <button
                 key={id}
                 className={`nav-tab ${activeTab === id ? 'active' : ''}`}
+                data-tutorial-target={`${id}-tab`}
                 onClick={() => handleTabSelect(id)}
               >
                 {label}
@@ -162,6 +172,7 @@ function AppContent() {
           <div className="user-menu-wrapper" onClick={(e) => e.stopPropagation()}>
             <button
               className={`user-menu-trigger ${userMenuOpen ? 'open' : ''}`}
+              data-tutorial-target="user-menu"
               onClick={(e) => {
                 e.stopPropagation()
                 setUserMenuOpen((o) => !o)
@@ -253,9 +264,10 @@ function AppContent() {
       )}
 
       {showTutorial === true && !loading && (
-        <WelcomeTutorial onComplete={handleTutorialComplete} />
+        <TutorialWalkthrough />
       )}
     </div>
+    </TutorialProvider>
   )
 }
 

@@ -169,7 +169,7 @@ export function CheckInView({
   }
 
   return (
-    <div className="goals-view checkin-view">
+    <div className="goals-view checkin-view" data-tutorial-target="checkin-area">
       <section className="goals-intro">
         <div className="checkin-progress-bar">
           <div

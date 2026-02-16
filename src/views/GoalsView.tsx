@@ -117,7 +117,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
         </p>
       </section>
 
-      <form className="goal-form" onSubmit={handleAdd}>
+      <form className="goal-form" data-tutorial-target="goal-form" onSubmit={handleAdd}>
         <input
           type="text"
           placeholder="Goal title"

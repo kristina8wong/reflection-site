@@ -18,3 +18,7 @@ yarn-error.log*
 # Environment
 .env
 .env.local
+
+# Generated PWA icons (created by npm run generate-icons)
+public/icon-192.png
+public/icon-512.png
