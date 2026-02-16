@@ -123,6 +123,11 @@
   color: #c97070;
 }
 
+.user-menu-dropdown a.user-menu-item {
+  text-decoration: none;
+  display: block;
+}
+
 .loading-state {
   text-align: center;
   padding: 4rem 2rem;

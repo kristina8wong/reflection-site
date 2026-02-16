@@ -9,6 +9,8 @@ import {
   getMonthSpans,
 } from '../utils'
 import { CheckInModal } from '../components/CheckInModal'
+import { GoalDescriptionModal } from '../components/GoalDescriptionModal'
+import { useTheme } from '../contexts/ThemeContext'
 import { reorderGoals } from '../firestore-storage'
 import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
 import './YearView.css'
@@ -34,10 +36,12 @@ export function YearView({
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
+  const [descriptionGoal, setDescriptionGoal] = useState<Goal | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   const draggedIdRef = useRef<string | null>(null)
   const [, forceUpdate] = useState({})
 
+  const { colorScheme } = useTheme()
   const yearGoals = goals
     .filter((g) => g.year === currentYear)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -153,7 +157,7 @@ export function YearView({
         <div className="year-grid-spacer year-month-spacer" />
         {monthSpans.map((span) => (
           <div
-            key={span.month}
+            key={`month-${span.month}-${span.startWeek}`}
             className="year-month-cell"
             style={{
               gridColumn: `${span.startCol + 1} / span ${span.weekCount}`,
@@ -168,7 +172,7 @@ export function YearView({
         <div className="year-grid-spacer year-date-spacer" />
         {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => (
           <div
-            key={week}
+            key={`week-${week}`}
             className={`year-date-cell ${isFirstWeekOfMonth(week, currentYear) ? 'month-start' : ''}`}
             style={{ gridRow: 2, gridColumn: week + 1 }}
             title={formatWeekRange(week, currentYear)}
@@ -201,12 +205,14 @@ export function YearView({
               )}
               <div
                 key={`goal-${goal.id}`}
-                className={`year-goal-info ${isBeingDragged ? 'dragging' : ''}`}
+                className={`year-goal-info ${isBeingDragged ? 'dragging' : ''} year-goal-clickable`}
                 style={{ gridRow, gridColumn: 1 }}
                 draggable={true}
                 onDragStart={() => handleDragStart(goal.id)}
                 onDragOver={(e) => handleDragOver(e, goal.id)}
                 onDragEnd={handleDragEnd}
+                onClick={() => setDescriptionGoal(goal)}
+                title="Click to view description"
                 {...getDragProps(goal)}
               >
                 <h3>{goal.title}</h3>
@@ -229,7 +235,7 @@ export function YearView({
                       title={formatWeekRange(week, currentYear)}
                     >
                       <button
-                        className={`week-dot ${filled ? 'filled' : ''}`}
+                        className={`week-dot ${filled ? 'filled' : ''}${hasRating && ci!.progressRating != null && ci!.progressRating >= 1 && ci!.progressRating <= 5 ? ` rating-${Math.round(ci!.progressRating)}` : ''}`}
                         style={{ width: BOX_SIZE, height: BOX_SIZE, minWidth: BOX_SIZE }}
                         onClick={() => handleBubbleClick(goal, week)}
                       >
@@ -249,9 +255,27 @@ export function YearView({
       </div>
 
       <div className="year-legend">
-        <span className="legend-item">
-          <span className="week-dot filled" /> Check-in completed
-        </span>
+        {colorScheme === 'red-green' ? (
+          <>
+            <span className="legend-item">
+              <span className="week-dot filled rating-1" /> 1
+            </span>
+            <span className="legend-item">
+              <span className="week-dot filled rating-5" /> 5
+            </span>
+            <span className="legend-item muted">(Struggling → Thriving)</span>
+          </>
+        ) : (
+          <>
+            <span className="legend-item">
+              <span className="week-dot filled rating-1" /> 1
+            </span>
+            <span className="legend-item">
+              <span className="week-dot filled rating-5" /> 5
+            </span>
+            <span className="legend-item muted">(Light → Full)</span>
+          </>
+        )}
         <span className="legend-item">
           <span className="week-dot" /> Not yet
         </span>
@@ -265,6 +289,13 @@ export function YearView({
           year={currentYear}
           onClose={handleModalClose}
           onSave={handleModalSave}
+        />
+      )}
+
+      {descriptionGoal && (
+        <GoalDescriptionModal
+          goal={descriptionGoal}
+          onClose={() => setDescriptionGoal(null)}
         />
       )}
     </div>

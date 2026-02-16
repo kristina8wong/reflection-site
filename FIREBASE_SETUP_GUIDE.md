@@ -56,7 +56,8 @@ service cloud.firestore {
       allow read: if request.auth != null && 
         (resource.data.userId == request.auth.uid || 
          exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + goalId)));
-      allow write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     // Check-ins: goal owner or users with edit access can write

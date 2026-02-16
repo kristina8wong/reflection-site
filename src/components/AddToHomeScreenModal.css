@@ -1,0 +1,42 @@
+.add-to-homescreen-modal {
+  max-width: 400px;
+}
+
+.add-to-homescreen-intro {
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+
+.add-to-homescreen-steps {
+  margin-bottom: 1rem;
+}
+
+.add-to-homescreen-steps h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.add-to-homescreen-steps ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.add-to-homescreen-steps li {
+  margin-bottom: 0.5rem;
+}
+
+.add-to-homescreen-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.share-icon {
+  font-style: normal;
+}
+
+.add-to-homescreen-desktop {
+  font-size: 0.9rem;
+}

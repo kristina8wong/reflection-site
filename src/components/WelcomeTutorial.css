@@ -1,0 +1,93 @@
+.tutorial-backdrop {
+  z-index: 1100;
+}
+
+.welcome-tutorial {
+  max-width: 420px;
+}
+
+.tutorial-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 1rem 1.5rem 0;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.tutorial-dot.active {
+  background: var(--accent);
+  transform: scale(1.2);
+}
+
+.tutorial-dot.done {
+  background: var(--text-muted);
+}
+
+.tutorial-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tutorial-header h3 {
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.tutorial-body {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0;
+  text-align: center;
+}
+
+.tutorial-footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+}
+
+.tutorial-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.welcome-tutorial .btn-ghost {
+  color: var(--text-muted);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.welcome-tutorial .btn-ghost:hover {
+  color: var(--text);
+  background: var(--bg-card);
+}
+
+.welcome-tutorial .btn-primary {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s, filter 0.2s;
+}
+
+.welcome-tutorial .btn-primary:hover {
+  filter: brightness(1.1);
+}

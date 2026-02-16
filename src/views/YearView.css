@@ -95,6 +95,10 @@
   border-left: 1px solid var(--border);
 }
 
+.year-goal-info.year-goal-clickable {
+  cursor: pointer;
+}
+
 .year-goal-info {
   grid-column: 1;
   justify-self: stretch;
@@ -127,7 +131,7 @@
 .year-drop-indicator {
   height: 4px;
   background: var(--accent);
-  box-shadow: 0 0 12px rgba(201, 168, 108, 0.8);
+  box-shadow: 0 0 12px var(--accent);
   pointer-events: none;
   position: relative;
   z-index: 100;
@@ -195,7 +199,7 @@
 
 .week-dot.filled:hover {
   border-color: var(--accent);
-  background: rgba(201, 168, 108, 0.4);
+  background: var(--accent-dim);
 }
 
 .year-legend {

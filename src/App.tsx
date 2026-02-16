@@ -6,6 +6,9 @@ import { GoalsView } from './views/GoalsView'
 import { CheckInView } from './views/CheckInView'
 import { YearView } from './views/YearView'
 import { SharedView } from './views/SharedView'
+import { SettingsModal } from './components/SettingsModal'
+import { AddToHomeScreenModal } from './components/AddToHomeScreenModal'
+import { WelcomeTutorial } from './components/WelcomeTutorial'
 import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
 
@@ -23,6 +26,9 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('checkin')
   const [navOpen, setNavOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [addToHomeScreenOpen, setAddToHomeScreenOpen] = useState(false)
+  const [showTutorial, setShowTutorial] = useState<boolean | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -55,6 +61,16 @@ function AppContent() {
           // Ignore - profile may not exist or update may fail
         })
       }
+      // Check if first-time user (never seen tutorial)
+      try {
+        const key = `year-reflection-tutorial-${currentUser.uid}`
+        const seen = localStorage.getItem(key)
+        setShowTutorial(seen !== '1')
+      } catch {
+        setShowTutorial(false)
+      }
+    } else {
+      setShowTutorial(null)
     }
   }, [currentUser, currentYear])
 
@@ -85,6 +101,17 @@ function AppContent() {
   function handleTabSelect(tab: Tab) {
     setActiveTab(tab)
     setNavOpen(false)
+  }
+
+  function handleTutorialComplete() {
+    setShowTutorial(false)
+    if (currentUser) {
+      try {
+        localStorage.setItem(`year-reflection-tutorial-${currentUser.uid}`, '1')
+      } catch {
+        // ignore
+      }
+    }
   }
 
   return (
@@ -141,6 +168,33 @@ function AppContent() {
             {userMenuOpen && (
               <div className="user-menu-dropdown">
                 <div className="user-menu-email">{currentUser.email}</div>
+                <button
+                  className="user-menu-item"
+                  onClick={() => {
+                    setUserMenuOpen(false)
+                    setSettingsOpen(true)
+                  }}
+                >
+                  Settings
+                </button>
+                <a
+                  className="user-menu-item"
+                  href="mailto:kristina8wong@gmail.com?subject=Year%20Reflection%20App%20-%20Feedback"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  Feedback
+                </a>
+                <button
+                  className="user-menu-item"
+                  onClick={() => {
+                    setUserMenuOpen(false)
+                    setAddToHomeScreenOpen(true)
+                  }}
+                >
+                  Add to Home Screen
+                </button>
                 <button className="user-menu-item" onClick={handleLogoutClick}>
                   Log Out
                 </button>
@@ -182,6 +236,18 @@ function AppContent() {
           </>
         )}
       </main>
+
+      {settingsOpen && (
+        <SettingsModal onClose={() => setSettingsOpen(false)} />
+      )}
+
+      {addToHomeScreenOpen && (
+        <AddToHomeScreenModal onClose={() => setAddToHomeScreenOpen(false)} />
+      )}
+
+      {showTutorial === true && !loading && (
+        <WelcomeTutorial onComplete={handleTutorialComplete} />
+      )}
     </div>
   )
 }

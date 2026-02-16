@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getSharedGoals, getCheckInsForSharedGoal } from '../firestore-storage'
 import { CheckInModal } from '../components/CheckInModal'
+import { GoalDescriptionModal } from '../components/GoalDescriptionModal'
 import type { Goal, CheckIn } from '../types'
 import {
   getWeeksInYear,
@@ -30,10 +31,12 @@ function SharedUserYearTimeline({
   goals,
   checkInsByGoal,
   onBubbleClick,
+  onGoalClick,
 }: {
   goals: SharedGoal[]
   checkInsByGoal: Record<string, CheckIn[]>
   onBubbleClick?: (goal: SharedGoal, week: number) => void
+  onGoalClick?: (goal: SharedGoal) => void
 }) {
   const goalsByYear = useMemo(() => {
     const byYear = new Map<number, SharedGoal[]>()
@@ -76,10 +79,10 @@ function SharedUserYearTimeline({
                 gap: '4px',
               }}
             >
-              <div className="year-grid-spacer year-month-spacer" />
+              <div key="month-spacer" className="year-grid-spacer year-month-spacer" />
               {monthSpans.map((span) => (
                 <div
-                  key={span.month}
+                  key={`month-${year}-${span.startWeek}`}
                   className="year-month-cell"
                   style={{
                     gridColumn: `${span.startCol + 1} / span ${span.weekCount}`,
@@ -89,10 +92,10 @@ function SharedUserYearTimeline({
                   {span.label}
                 </div>
               ))}
-              <div className="year-grid-spacer year-date-spacer" />
+              <div key="date-spacer" className="year-grid-spacer year-date-spacer" />
               {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => (
                 <div
-                  key={week}
+                  key={`date-${year}-${week}`}
                   className={`year-date-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''}`}
                   style={{ gridRow: 2, gridColumn: week + 1 }}
                   title={formatWeekRange(week, year)}
@@ -106,8 +109,12 @@ function SharedUserYearTimeline({
                 return (
                   <React.Fragment key={goal.id}>
                     <div
-                      className="year-goal-info shared-user-goal-info"
+                      key={`${goal.id}-label`}
+                      className={`year-goal-info shared-user-goal-info ${onGoalClick ? 'year-goal-clickable' : ''}`}
                       style={{ gridRow, gridColumn: 1 }}
+                      role={onGoalClick ? 'button' : undefined}
+                      onClick={onGoalClick ? () => onGoalClick(goal) : undefined}
+                      title={onGoalClick ? 'Click to view description' : undefined}
                     >
                       <h3>{goal.title}</h3>
                       {avg != null && <span className="avg-rating">Avg: {avg}/5</span>}
@@ -120,14 +127,14 @@ function SharedUserYearTimeline({
                       const canEdit = goal.accessLevel === 'edit' && onBubbleClick
                       return (
                         <div
-                          key={week}
+                          key={`${goal.id}-${week}`}
                           className={`year-bubble-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''} ${canEdit ? 'clickable' : ''}`}
                           style={{ gridRow, gridColumn: week + 1 }}
                           title={formatWeekRange(week, year)}
                           role={canEdit ? 'button' : undefined}
                           onClick={canEdit ? () => onBubbleClick(goal, week) : undefined}
                         >
-                          <span className={`week-dot ${filled ? 'filled' : ''}`}>
+                          <span className={`week-dot ${filled ? 'filled' : ''}${hasRating && ci!.progressRating != null && ci!.progressRating >= 1 && ci!.progressRating <= 5 ? ` rating-${Math.round(ci!.progressRating)}` : ''}`}>
                             {filled ? (hasRating ? ci!.progressRating : '•') : null}
                           </span>
                         </div>
@@ -321,16 +328,16 @@ function SharedGoalYearGrid({
       : null
 
   return (
-    <div
-      className="shared-year-grid"
-      style={{
-        gridTemplateColumns: `120px repeat(${totalWeeks}, ${WEEK_CELL_WIDTH}px)`,
-      }}
+<div
+          className="shared-year-grid"
+          style={{
+            gridTemplateColumns: `120px repeat(${totalWeeks}, ${WEEK_CELL_WIDTH}px)`,
+          }}
     >
-      <div className="shared-year-spacer" />
+      <div key="date-row-spacer" className="shared-year-spacer" />
       {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => (
         <div
-          key={`date-${week}`}
+          key={`date-${goal.id}-${week}`}
           className={`shared-year-date-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''}`}
           title={formatWeekRangeShort(week, year)}
         >
@@ -349,13 +356,13 @@ function SharedGoalYearGrid({
         const canEdit = goal.accessLevel === 'edit' && onBubbleClick
         return (
           <div
-            key={week}
+            key={`cell-${goal.id}-${week}`}
             className={`shared-year-cell ${isFirstWeekOfMonth(week, year) ? 'month-start' : ''} ${canEdit ? 'clickable' : ''}`}
             title={`Week ${week}: ${formatWeekRangeShort(week, year)}`}
             role={canEdit ? 'button' : undefined}
             onClick={canEdit ? () => onBubbleClick(week) : undefined}
           >
-            <span className={`week-dot ${filled ? 'filled' : ''}`}>
+            <span className={`week-dot ${filled ? 'filled' : ''}${hasRating && ci!.progressRating != null && ci!.progressRating >= 1 && ci!.progressRating <= 5 ? ` rating-${Math.round(ci!.progressRating)}` : ''}`}>
               {filled ? (hasRating ? ci!.progressRating : '•') : null}
             </span>
           </div>
@@ -374,13 +381,14 @@ export function SharedView() {
   const [loading, setLoading] = useState(true)
   const [loadingCheckIns, setLoadingCheckIns] = useState(false)
   const [checkInsVisibleCount, setCheckInsVisibleCount] = useState(3)
-  const [viewMode, setViewMode] = useState<'byUser' | 'byGoal'>('byGoal')
+  const [viewMode, setViewMode] = useState<'byUser' | 'byGoal'>('byUser')
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [sharedUserSelectedYear, setSharedUserSelectedYear] = useState<number>(() => new Date().getFullYear())
   const [sharedUserSelectedWeek, setSharedUserSelectedWeek] = useState<number>(() => getWeekOfYear(new Date()))
   const [editModalGoal, setEditModalGoal] = useState<SharedGoal | null>(null)
   const [editModalWeek, setEditModalWeek] = useState<number | null>(null)
   const [editModalYear, setEditModalYear] = useState<number | null>(null)
+  const [descriptionGoal, setDescriptionGoal] = useState<SharedGoal | null>(null)
 
   // Filters
   const [filterOwner, setFilterOwner] = useState<string>('')
@@ -737,6 +745,7 @@ export function SharedView() {
                   onBubbleClick={(goal, week) =>
                     handleOpenEditModal(goal, week, goal.year)
                   }
+                  onGoalClick={setDescriptionGoal}
                 />
                 </div>
                 <div className="shared-user-checkin-section">
@@ -871,6 +880,13 @@ export function SharedView() {
           year={editModalYear}
           onClose={handleCloseEditModal}
           onSave={handleEditModalSave}
+        />
+      )}
+
+      {descriptionGoal && (
+        <GoalDescriptionModal
+          goal={descriptionGoal}
+          onClose={() => setDescriptionGoal(null)}
         />
       )}
     </div>
