@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
-const DRAG_THRESHOLD_PX = 8
+const LONG_PRESS_MS = 450
 const DATA_ATTR = 'data-drag-id'
 
 export interface UseTouchDragReorderOptions<T> {
@@ -21,6 +21,8 @@ export function useTouchDragReorder<T>({
   const touchStartRef = useRef<{ x: number; y: number; id: string } | null>(null)
   const isDraggingRef = useRef(false)
   const lastReorderTargetRef = useRef<string | null>(null)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const draggedElementRef = useRef<Element | null>(null)
   const itemsRef = useRef(items)
   itemsRef.current = items
 
@@ -41,26 +43,29 @@ export function useTouchDragReorder<T>({
   )
 
   const getTargetIdFromPoint = useCallback((clientX: number, clientY: number): string | null => {
+    // On iOS, the dragged element can block elementFromPoint. Temporarily hide it
+    // from hit-testing so we can find the element underneath.
+    const dragEl = draggedElementRef.current
+    let pointerEvents = ''
+    if (dragEl && dragEl instanceof HTMLElement) {
+      pointerEvents = dragEl.style.pointerEvents
+      dragEl.style.pointerEvents = 'none'
+    }
     const el = document.elementFromPoint(clientX, clientY)
-    const dragEl = el?.closest(`[${DATA_ATTR}]`)
-    return dragEl ? (dragEl.getAttribute(DATA_ATTR) as string) : null
+    if (dragEl && dragEl instanceof HTMLElement) {
+      dragEl.style.pointerEvents = pointerEvents
+    }
+    const targetDragEl = el?.closest(`[${DATA_ATTR}]`)
+    return targetDragEl ? (targetDragEl.getAttribute(DATA_ATTR) as string) : null
   }, [])
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
       if (!touchStartRef.current || !e.touches.length) return
-      const touch = e.touches[0]
-      const dx = touch.clientX - touchStartRef.current.x
-      const dy = touch.clientY - touchStartRef.current.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-
-      if (!isDraggingRef.current && distance > DRAG_THRESHOLD_PX) {
-        isDraggingRef.current = true
-        setDraggedId(touchStartRef.current.id)
-      }
 
       if (isDraggingRef.current) {
         e.preventDefault()
+        const touch = e.touches[0]
         const targetId = getTargetIdFromPoint(touch.clientX, touch.clientY)
         if (targetId && targetId !== touchStartRef.current.id) {
           setDragOverId(targetId)
@@ -76,8 +81,13 @@ export function useTouchDragReorder<T>({
 
   const handleTouchEnd = useCallback(
     async (e: TouchEvent) => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+        longPressTimerRef.current = null
+      }
+      draggedElementRef.current = null
+
       if (!touchStartRef.current) return
-      const touch = e.changedTouches[0]
 
       if (isDraggingRef.current) {
         e.preventDefault()
@@ -104,6 +114,7 @@ export function useTouchDragReorder<T>({
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
       document.removeEventListener('touchcancel', handleTouchEnd)
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
     }
   }, [handleTouchMove, handleTouchEnd])
 
@@ -111,10 +122,24 @@ export function useTouchDragReorder<T>({
     (e: React.TouchEvent, itemId: string) => {
       const item = items.find((i) => getItemId(i) === itemId)
       if (isDisabled?.(item as T)) return
+
       const touch = e.touches[0]
       touchStartRef.current = { x: touch.clientX, y: touch.clientY, id: itemId }
       isDraggingRef.current = false
       lastReorderTargetRef.current = null
+
+      // Long-press to activate drag (hold ~450ms)
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTimerRef.current = null
+        isDraggingRef.current = true
+        setDraggedId(itemId)
+        // Store ref to dragged element for elementFromPoint fix on iOS
+        draggedElementRef.current = document.querySelector(
+          `[${DATA_ATTR}="${CSS.escape(itemId)}"]`
+        )
+        // Haptic feedback on supported devices
+        if (navigator.vibrate) navigator.vibrate(50)
+      }, LONG_PRESS_MS)
     },
     [items, getItemId, isDisabled]
   )
@@ -125,7 +150,8 @@ export function useTouchDragReorder<T>({
       return {
         [DATA_ATTR]: id,
         onTouchStart: (e: React.TouchEvent) => handleTouchStart(e, id),
-        style: { touchAction: 'manipulation' } as React.CSSProperties,
+        // Prevent browser from consuming touch for scroll/zoom so our handlers get touchmove
+        style: { touchAction: 'none' } as React.CSSProperties,
       }
     },
     [getItemId, handleTouchStart]
