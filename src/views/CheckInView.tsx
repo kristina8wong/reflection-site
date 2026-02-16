@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Goal, CheckIn } from '../types'
 import { saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../firestore-storage'
 import { getWeekOfYear, getWeeksInYear, formatWeekRange } from '../utils'
+import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
 import './GoalsView.css'
 import './CheckInView.css'
 
@@ -142,6 +143,22 @@ export function CheckInView({
     setDraggedId(null)
   }
 
+  const handleTouchReorder = useCallback(
+    async (ids: string[]) => {
+      await reorderGoals(ids)
+      onRefresh(false)
+    },
+    [onRefresh]
+  )
+
+  const { draggedId: touchDraggedId, getDragProps } = useTouchDragReorder({
+    items: sortedGoals,
+    getItemId: (g) => g.id,
+    onReorder: handleTouchReorder,
+  })
+
+  const isDragging = (goalId: string) => draggedId === goalId || touchDraggedId === goalId
+
   if (yearGoals.length === 0) {
     return (
       <div className="goals-view checkin-empty-state">
@@ -195,11 +212,12 @@ export function CheckInView({
           return (
             <li
               key={goal.id}
-              className={`goal-card checkin-card ${isPending ? 'checkin-card-pending' : 'checkin-card-completed'} ${draggedId === goal.id ? 'dragging' : ''}`}
+              className={`goal-card checkin-card ${isPending ? 'checkin-card-pending' : 'checkin-card-completed'} ${isDragging(goal.id) ? 'dragging' : ''}`}
               draggable={true}
               onDragStart={() => handleDragStart(goal.id)}
               onDragOver={(e) => handleDragOver(e, goal.id)}
               onDragEnd={handleDragEnd}
+              {...getDragProps(goal)}
             >
               <div className="goal-content checkin-goal-content">
                 <h3>{goal.title}</h3>

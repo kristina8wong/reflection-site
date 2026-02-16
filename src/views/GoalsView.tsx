@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import type { Goal } from '../types'
 import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../firestore-storage'
 import { useAuth } from '../contexts/AuthContext'
 import { ShareModal } from '../components/ShareModal'
+import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
 import './GoalsView.css'
 
 interface GoalsViewProps {
@@ -90,6 +91,23 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
     setDraggedId(null)
   }
 
+  const handleTouchReorder = useCallback(
+    async (ids: string[]) => {
+      await reorderGoals(ids)
+      onRefresh(false)
+    },
+    [onRefresh]
+  )
+
+  const { draggedId: touchDraggedId, getDragProps } = useTouchDragReorder({
+    items: yearGoals,
+    getItemId: (g) => g.id,
+    onReorder: handleTouchReorder,
+    isDisabled: (g) => editingId === g.id,
+  })
+
+  const isDragging = (goalId: string) => draggedId === goalId || touchDraggedId === goalId
+
   return (
     <div className="goals-view">
       <section className="goals-intro">
@@ -128,11 +146,12 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
         {yearGoals.map((goal) => (
           <li
             key={goal.id}
-            className={`goal-card ${draggedId === goal.id ? 'dragging' : ''}`}
+            className={`goal-card ${isDragging(goal.id) ? 'dragging' : ''}`}
             draggable={editingId !== goal.id}
             onDragStart={() => handleDragStart(goal.id)}
             onDragOver={(e) => handleDragOver(e, goal.id)}
             onDragEnd={handleDragEnd}
+            {...getDragProps(goal)}
           >
             {editingId === goal.id ? (
               <div className="goal-edit">

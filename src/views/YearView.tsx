@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import * as React from 'react'
 import type { Goal, CheckIn } from '../types'
 import {
@@ -10,6 +10,7 @@ import {
 } from '../utils'
 import { CheckInModal } from '../components/CheckInModal'
 import { reorderGoals } from '../firestore-storage'
+import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
 import './YearView.css'
 
 const WEEK_CELL_WIDTH = 44
@@ -66,14 +67,8 @@ export function YearView({
   async function handleDragOver(e: React.DragEvent, targetGoalId: string) {
     e.preventDefault()
     const draggedId = draggedIdRef.current
-    console.log('handleDragOver - draggedId:', draggedId, 'targetGoalId:', targetGoalId)
-    
-    if (!draggedId || draggedId === targetGoalId) {
-      console.log('Skipping - same goal or no draggedId')
-      return
-    }
+    if (!draggedId || draggedId === targetGoalId) return
 
-    console.log('Setting dragOverId to:', targetGoalId)
     setDragOverId(targetGoalId)
 
     const draggedIndex = yearGoals.findIndex((g) => g.id === draggedId)
@@ -85,24 +80,32 @@ export function YearView({
     reordered.splice(targetIndex, 0, removed)
 
     await reorderGoals(reordered.map((g) => g.id))
-    // Don't refresh during drag - wait until drag ends
   }
 
   function handleDragEnd() {
-    // Clear dragged state
     const wasSet = draggedIdRef.current !== null
     draggedIdRef.current = null
     setDragOverId(null)
-    
-    // Force update to clear opacity
     if (wasSet) {
       forceUpdate({})
-      // Then refresh to get updated order after a brief delay
-      setTimeout(() => {
-        if (onRefresh) onRefresh()
-      }, 50)
+      setTimeout(() => onRefresh?.(), 50)
     }
   }
+
+  const handleTouchReorder = useCallback(
+    async (ids: string[]) => {
+      await reorderGoals(ids)
+      setTimeout(() => onRefresh?.(), 50)
+    },
+    [onRefresh]
+  )
+
+  const { draggedId: touchDraggedId, dragOverId: touchDragOverId, getDragProps } =
+    useTouchDragReorder({
+      items: yearGoals,
+      getItemId: (g) => g.id,
+      onReorder: handleTouchReorder,
+    })
 
   function getCheckInForGoalWeek(goalId: string, week: number): CheckIn | undefined {
     return checkIns.find(
@@ -178,9 +181,11 @@ export function YearView({
         {yearGoals.map((goal, rowIndex) => {
           const avg = avgRatingForGoal(goal.id)
           const gridRow = 3 + rowIndex
-          const draggedId = draggedIdRef.current
+          const mouseDraggedId = draggedIdRef.current
+          const draggedId = mouseDraggedId ?? touchDraggedId
           const isBeingDragged = draggedId === goal.id
-          const showDropIndicator = dragOverId === goal.id && draggedId !== goal.id
+          const dropTargetId = dragOverId ?? touchDragOverId
+          const showDropIndicator = dropTargetId === goal.id && draggedId !== goal.id
           return (
             <React.Fragment key={goal.id}>
               {/* Drop indicator line - appears above the target row */}
@@ -202,6 +207,7 @@ export function YearView({
                 onDragStart={() => handleDragStart(goal.id)}
                 onDragOver={(e) => handleDragOver(e, goal.id)}
                 onDragEnd={handleDragEnd}
+                {...getDragProps(goal)}
               >
                 <h3>{goal.title}</h3>
                 {avg != null && (
