@@ -59,11 +59,17 @@ service cloud.firestore {
       allow write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
-    // Check-ins: users can read check-ins for their own goals or shared goals
+    // Check-ins: goal owner or users with edit access can write
     match /checkIns/{checkInId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-        get(/databases/$(database)/documents/goals/$(resource.data.goalId)).data.userId == request.auth.uid;
+      allow create: if request.auth != null && (
+        get(/databases/$(database)/documents/goals/$(request.resource.data.goalId)).data.userId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + request.resource.data.goalId)) &&
+        get(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + request.resource.data.goalId)).data.accessLevel == 'edit'));
+      allow update, delete: if request.auth != null && (
+        get(/databases/$(database)/documents/goals/$(resource.data.goalId)).data.userId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + resource.data.goalId)) &&
+        get(/databases/$(database)/documents/shares/$(request.auth.uid + '_' + resource.data.goalId)).data.accessLevel == 'edit'));
     }
     
     // Shares: document ID must be {sharedWithId}_{goalId} for goals rule to allow reads
