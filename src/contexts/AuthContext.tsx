@@ -5,7 +5,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth'
 import { auth } from '../firebase'
 import { createUserProfile } from '../firestore-storage'
@@ -42,6 +43,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await updateProfile(userCredential.user, { displayName })
       // Create user profile in Firestore for email lookup
       await createUserProfile(userCredential.user.uid, email, displayName)
+      // Send verification email so user confirms they own the address
+      await sendEmailVerification(userCredential.user)
     }
   }
 

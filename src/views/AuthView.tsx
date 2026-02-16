@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import './AuthView.css'
 
+function isValidEmail(str: string): boolean {
+  const trimmed = str.trim()
+  if (!trimmed) return false
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(trimmed)
+}
+
 export function AuthView() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
@@ -24,6 +31,11 @@ export function AuthView() {
       } else {
         if (!displayName.trim()) {
           setError('Please enter your full name')
+          setLoading(false)
+          return
+        }
+        if (!isValidEmail(email)) {
+          setError('Please enter a valid email address (e.g. name@example.com)')
           setLoading(false)
           return
         }
