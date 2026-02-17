@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AuthView } from './views/AuthView'
 import type { Goal, CheckIn } from './types'
@@ -9,7 +10,7 @@ import { SharedView } from './views/SharedView'
 import { SettingsModal } from './components/SettingsModal'
 import { AddToHomeScreenModal } from './components/AddToHomeScreenModal'
 import { TutorialWalkthrough } from './components/TutorialWalkthrough'
-import { TutorialProvider, useTutorial } from './contexts/TutorialContext'
+import { TutorialProvider, useTutorial, TUTORIAL_STEPS } from './contexts/TutorialContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
@@ -27,7 +28,6 @@ const HAMBURGER_BREAKPOINT = 768
 
 function AppContent() {
   const { currentUser, logout } = useAuth()
-  const tutorial = useTutorial()
   const [hamburgerVisible, setHamburgerVisible] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= HAMBURGER_BREAKPOINT
   )
@@ -123,12 +123,6 @@ function AppContent() {
     (_, i) => thisYear - PAST_YEARS + i
   )
 
-  function handleTabSelect(tab: Tab) {
-    tutorial?.onTabSelect?.(tab)
-    setActiveTab(tab)
-    setNavOpen(false)
-  }
-
   function handleTutorialComplete() {
     setShowTutorial(false)
     if (currentUser) {
@@ -146,6 +140,164 @@ function AppContent() {
       onComplete={handleTutorialComplete}
       skipMenuStep={!hamburgerVisible}
     >
+    <AppShell
+      currentUser={currentUser}
+      logout={logout}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      navOpen={navOpen}
+      hamburgerVisible={hamburgerVisible}
+      setNavOpen={setNavOpen}
+      userMenuOpen={userMenuOpen}
+      setUserMenuOpen={setUserMenuOpen}
+      setSettingsOpen={setSettingsOpen}
+      setAddToHomeScreenOpen={setAddToHomeScreenOpen}
+      currentYear={currentYear}
+      setCurrentYear={setCurrentYear}
+      yearOptions={yearOptions}
+      goals={goals}
+      checkIns={checkIns}
+      loading={loading}
+      refresh={refresh}
+      settingsOpen={settingsOpen}
+      addToHomeScreenOpen={addToHomeScreenOpen}
+      showTutorial={showTutorial}
+    />
+    </TutorialProvider>
+  )
+}
+
+function UserMenuDropdownPortal({
+  currentUser,
+  logout,
+  onClose,
+  onOpenSettings,
+  onOpenAddToHomeScreen,
+}: {
+  currentUser: { email: string | null; displayName: string | null }
+  logout: () => Promise<void>
+  onClose: () => void
+  onOpenSettings: () => void
+  onOpenAddToHomeScreen: () => void
+}) {
+  const [style, setStyle] = useState({ top: 0, right: 0 })
+  useEffect(() => {
+    const update = () => {
+      const trigger = document.querySelector('[data-tutorial-target="user-menu"]') as HTMLElement
+      if (trigger) {
+        const r = trigger.getBoundingClientRect()
+        setStyle({ top: r.bottom + 4, right: window.innerWidth - r.right })
+      }
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return (
+    <div
+      className="user-menu-dropdown user-menu-dropdown-portaled"
+      style={{
+        position: 'fixed',
+        top: style.top,
+        right: style.right,
+      }}
+    >
+      <div className="user-menu-email">{currentUser.email}</div>
+      <button className="user-menu-item" onClick={onOpenSettings}>
+        Settings
+      </button>
+      <a
+        className="user-menu-item"
+        href="mailto:kristina8wong@gmail.com?subject=Year%20Reflection%20App%20-%20Feedback"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+      >
+        Feedback
+      </a>
+      <button className="user-menu-item" onClick={onOpenAddToHomeScreen}>
+        Add to Home Screen
+      </button>
+      <button
+        className="user-menu-item"
+        onClick={() => {
+          if (confirm('Are you sure you want to log out?')) {
+            onClose()
+            logout()
+          }
+        }}
+      >
+        Log Out
+      </button>
+    </div>
+  )
+}
+
+interface AppShellProps {
+  currentUser: { uid: string; displayName: string | null; email: string | null }
+  logout: () => Promise<void>
+  activeTab: Tab
+  setActiveTab: (tab: Tab) => void
+  navOpen: boolean
+  hamburgerVisible: boolean
+  setNavOpen: (v: boolean | ((o: boolean) => boolean)) => void
+  userMenuOpen: boolean
+  setUserMenuOpen: (v: boolean | ((o: boolean) => boolean)) => void
+  setSettingsOpen: (v: boolean) => void
+  setAddToHomeScreenOpen: (v: boolean) => void
+  currentYear: number
+  setCurrentYear: (v: number) => void
+  yearOptions: number[]
+  goals: Goal[]
+  checkIns: CheckIn[]
+  loading: boolean
+  refresh: (showLoading?: boolean) => void
+  settingsOpen: boolean
+  addToHomeScreenOpen: boolean
+  showTutorial: boolean | null
+}
+
+function AppShell({
+  currentUser,
+  logout,
+  activeTab,
+  setActiveTab,
+  navOpen,
+  hamburgerVisible,
+  setNavOpen,
+  userMenuOpen,
+  setUserMenuOpen,
+  setSettingsOpen,
+  setAddToHomeScreenOpen,
+  currentYear,
+  setCurrentYear,
+  yearOptions,
+  goals,
+  checkIns,
+  loading,
+  refresh,
+  settingsOpen,
+  addToHomeScreenOpen,
+  showTutorial,
+}: AppShellProps) {
+  const tutorial = useTutorial()
+
+  useEffect(() => {
+    if (!tutorial?.isActive || tutorial.step === undefined) return
+    const step = tutorial.step
+    const current = TUTORIAL_STEPS[step]
+    if (current?.id === 'goals-tab' && activeTab !== 'goals') {
+      setActiveTab('goals')
+    }
+  }, [tutorial?.isActive, tutorial?.step, activeTab, setActiveTab])
+
+  function handleTabSelect(tab: Tab) {
+    tutorial?.onTabSelect?.(tab)
+    setActiveTab(tab)
+    setNavOpen(false)
+  }
+
+  return (
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">Year Reflection</h1>
@@ -200,41 +352,23 @@ function AppContent() {
               <span className="user-name">{currentUser.displayName || currentUser.email}</span>
               <span className="user-menu-chevron">▼</span>
             </button>
-            {userMenuOpen && (
-              <div className="user-menu-dropdown">
-                <div className="user-menu-email">{currentUser.email}</div>
-                <button
-                  className="user-menu-item"
-                  onClick={() => {
+            {userMenuOpen &&
+              createPortal(
+                <UserMenuDropdownPortal
+                  currentUser={currentUser}
+                  logout={logout}
+                  onClose={() => setUserMenuOpen(false)}
+                  onOpenSettings={() => {
                     setUserMenuOpen(false)
                     setSettingsOpen(true)
                   }}
-                >
-                  Settings
-                </button>
-                <a
-                  className="user-menu-item"
-                  href="mailto:kristina8wong@gmail.com?subject=Year%20Reflection%20App%20-%20Feedback"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  Feedback
-                </a>
-                <button
-                  className="user-menu-item"
-                  onClick={() => {
+                  onOpenAddToHomeScreen={() => {
                     setUserMenuOpen(false)
                     setAddToHomeScreenOpen(true)
                   }}
-                >
-                  Add to Home Screen
-                </button>
-                <button className="user-menu-item" onClick={handleLogoutClick}>
-                  Log Out
-                </button>
-              </div>
-            )}
+                />,
+                document.body
+              )}
           </div>
         </div>
       </header>
@@ -281,10 +415,13 @@ function AppContent() {
       )}
 
       {showTutorial === true && !loading && (
-        <TutorialWalkthrough />
+        <TutorialWalkthrough
+          navOpen={navOpen}
+          hamburgerVisible={hamburgerVisible}
+          hasYearGoals={goals.some((g) => g.year === currentYear)}
+        />
       )}
     </div>
-    </TutorialProvider>
   )
 }
 

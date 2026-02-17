@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTutorial } from '../contexts/TutorialContext'
 import { getSharedGoals, getCheckInsForSharedGoal } from '../firestore-storage'
 import { CheckInModal } from '../components/CheckInModal'
 import { GoalDescriptionModal } from '../components/GoalDescriptionModal'
@@ -374,6 +375,7 @@ function SharedGoalYearGrid({
 
 export function SharedView() {
   const { currentUser } = useAuth()
+  const { isActive: tutorialActive } = useTutorial()
   const [sharedGoals, setSharedGoals] = useState<SharedGoal[]>([])
   const [checkInsByGoal, setCheckInsByGoal] = useState<Record<string, CheckIn[]>>({})
   const [selectedGoal, setSelectedGoal] = useState<SharedGoal | null>(null)
@@ -399,6 +401,18 @@ export function SharedView() {
   useEffect(() => {
     loadSharedGoals()
   }, [currentUser])
+
+  // Close edit modal when tutorial advances so it doesn't overlay the next step
+  useEffect(() => {
+    if (!tutorialActive) return
+    const handler = () => {
+      setEditModalGoal(null)
+      setEditModalWeek(null)
+      setEditModalYear(null)
+    }
+    window.addEventListener('tutorial-advanced', handler)
+    return () => window.removeEventListener('tutorial-advanced', handler)
+  }, [tutorialActive])
 
   useEffect(() => {
     if (sharedGoals.length === 0) return
@@ -578,7 +592,7 @@ export function SharedView() {
   if (sharedGoals.length === 0) {
     return (
       <div className="shared-view">
-        <section className="shared-intro">
+        <section className="shared-intro" data-tutorial-target="shared-view">
           <h2>Shared with Me</h2>
           <p className="muted">
             When others share their goals with you, they'll appear here.
@@ -593,7 +607,7 @@ export function SharedView() {
 
   return (
     <div className="shared-view">
-      <section className="shared-intro">
+      <section className="shared-intro" data-tutorial-target="shared-view">
         <h2>Shared with Me</h2>
         <p className="muted">
           Goals that others have shared with you. Click to view their progress.
