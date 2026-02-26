@@ -9,8 +9,6 @@ import { YearView } from './views/YearView'
 import { SharedView } from './views/SharedView'
 import { SettingsModal } from './components/SettingsModal'
 import { AddToHomeScreenModal } from './components/AddToHomeScreenModal'
-import { TutorialWalkthrough } from './components/TutorialWalkthrough'
-import { TutorialProvider, useTutorial, TUTORIAL_STEPS } from './contexts/TutorialContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { getGoalsForYear, getAllCheckInsForUser, ensureUserProfileSearchable } from './firestore-storage'
 import './App.css'
@@ -42,7 +40,6 @@ function AppContent() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [addToHomeScreenOpen, setAddToHomeScreenOpen] = useState(false)
-  const [showTutorial, setShowTutorial] = useState<boolean | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -75,24 +72,8 @@ function AppContent() {
           // Ignore - profile may not exist or update may fail
         })
       }
-    } else {
-      setShowTutorial(null)
     }
   }, [currentUser, currentYear])
-
-  // Show tutorial only if user hasn't completed it (never re-show after completion)
-  useEffect(() => {
-    if (!currentUser || loading) return
-
-    try {
-      const key = `year-reflection-tutorial-${currentUser.uid}`
-      const seen = localStorage.getItem(key)
-      const shouldShow = seen !== '1'
-      setShowTutorial(shouldShow)
-    } catch {
-      setShowTutorial(false)
-    }
-  }, [currentUser, loading])
 
   useEffect(() => {
     if (!navOpen && !userMenuOpen) return
@@ -123,23 +104,7 @@ function AppContent() {
     (_, i) => thisYear - PAST_YEARS + i
   )
 
-  function handleTutorialComplete() {
-    setShowTutorial(false)
-    if (currentUser) {
-      try {
-        localStorage.setItem(`year-reflection-tutorial-${currentUser.uid}`, '1')
-      } catch {
-        // ignore
-      }
-    }
-  }
-
   return (
-    <TutorialProvider
-      active={showTutorial === true}
-      onComplete={handleTutorialComplete}
-      skipMenuStep={!hamburgerVisible}
-    >
     <AppShell
       currentUser={currentUser}
       logout={logout}
@@ -161,9 +126,7 @@ function AppContent() {
       refresh={refresh}
       settingsOpen={settingsOpen}
       addToHomeScreenOpen={addToHomeScreenOpen}
-      showTutorial={showTutorial}
     />
-    </TutorialProvider>
   )
 }
 
@@ -183,7 +146,7 @@ function UserMenuDropdownPortal({
   const [style, setStyle] = useState({ top: 0, right: 0 })
   useEffect(() => {
     const update = () => {
-      const trigger = document.querySelector('[data-tutorial-target="user-menu"]') as HTMLElement
+      const trigger = document.querySelector('.user-menu-trigger') as HTMLElement
       if (trigger) {
         const r = trigger.getBoundingClientRect()
         setStyle({ top: r.bottom + 4, right: window.innerWidth - r.right })
@@ -254,7 +217,6 @@ interface AppShellProps {
   refresh: (showLoading?: boolean) => void
   settingsOpen: boolean
   addToHomeScreenOpen: boolean
-  showTutorial: boolean | null
 }
 
 function AppShell({
@@ -278,21 +240,8 @@ function AppShell({
   refresh,
   settingsOpen,
   addToHomeScreenOpen,
-  showTutorial,
 }: AppShellProps) {
-  const tutorial = useTutorial()
-
-  useEffect(() => {
-    if (!tutorial?.isActive || tutorial.step === undefined) return
-    const step = tutorial.step
-    const current = TUTORIAL_STEPS[step]
-    if (current?.id === 'goals-tab' && activeTab !== 'goals') {
-      setActiveTab('goals')
-    }
-  }, [tutorial?.isActive, tutorial?.step, activeTab, setActiveTab])
-
   function handleTabSelect(tab: Tab) {
-    tutorial?.onTabSelect?.(tab)
     setActiveTab(tab)
     setNavOpen(false)
   }
@@ -313,10 +262,8 @@ function AppShell({
           </select>
           <button
             className="nav-hamburger"
-            data-tutorial-target="menu-btn"
             onClick={(e) => {
               e.stopPropagation()
-              tutorial?.onMenuClick?.()
               setNavOpen((o) => !o)
             }}
             aria-label={navOpen ? 'Close menu' : 'Open menu'}
@@ -331,7 +278,6 @@ function AppShell({
               <button
                 key={id}
                 className={`nav-tab ${activeTab === id ? 'active' : ''}`}
-                data-tutorial-target={`${id}-tab`}
                 onClick={() => handleTabSelect(id)}
               >
                 {label}
@@ -341,7 +287,6 @@ function AppShell({
           <div className="user-menu-wrapper" onClick={(e) => e.stopPropagation()}>
             <button
               className={`user-menu-trigger ${userMenuOpen ? 'open' : ''}`}
-              data-tutorial-target="user-menu"
               onClick={(e) => {
                 e.stopPropagation()
                 setUserMenuOpen((o) => !o)
@@ -412,14 +357,6 @@ function AppShell({
 
       {addToHomeScreenOpen && (
         <AddToHomeScreenModal onClose={() => setAddToHomeScreenOpen(false)} />
-      )}
-
-      {showTutorial === true && !loading && (
-        <TutorialWalkthrough
-          navOpen={navOpen}
-          hamburgerVisible={hamburgerVisible}
-          hasYearGoals={goals.some((g) => g.year === currentYear)}
-        />
       )}
     </div>
   )

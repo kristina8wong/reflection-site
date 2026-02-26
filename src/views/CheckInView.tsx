@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Goal, CheckIn } from '../types'
-import { useTutorial } from '../contexts/TutorialContext'
 import { saveOrUpdateCheckIn, deleteCheckIn, reorderGoals } from '../firestore-storage'
 import { getWeekOfYear, getWeeksInYear, formatWeekRange } from '../utils'
 import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
@@ -40,7 +39,6 @@ export function CheckInView({
   const [editingCheckInId, setEditingCheckInId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
 
-  const { onCheckInAdded } = useTutorial() ?? {}
   const yearGoals = goals
     .filter((g) => g.year === year)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -107,7 +105,6 @@ export function CheckInView({
     )
     setEditingCheckInId(null)
     onRefresh()
-    onCheckInAdded?.()
   }
 
   function handleEditCheckIn(goalId: string) {
@@ -164,7 +161,7 @@ export function CheckInView({
 
   if (yearGoals.length === 0) {
     return (
-      <div className="goals-view checkin-empty-state" data-tutorial-target="checkin-empty-state">
+      <div className="goals-view checkin-empty-state">
         <h2>Weekly Check-in</h2>
         <p className="muted">Add goals first in the Goals tab, then come back here for weekly reflections.</p>
       </div>
@@ -206,7 +203,7 @@ export function CheckInView({
         <p className="week-range muted">{formatWeekRange(selectedWeek, year)}</p>
       </section>
 
-      <ul className="goal-list" data-tutorial-target="checkin-main-card">
+      <ul className="goal-list">
         {sortedGoals.map((goal) => {
           const isEditingCheckIn = editingCheckInId === goal.id
           const isPending = !getCheckIn(goal.id, selectedWeek, year)

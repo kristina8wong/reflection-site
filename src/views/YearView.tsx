@@ -11,7 +11,6 @@ import {
 import { CheckInModal } from '../components/CheckInModal'
 import { GoalDescriptionModal } from '../components/GoalDescriptionModal'
 import { useTheme } from '../contexts/ThemeContext'
-import { useTutorial, TUTORIAL_STEPS } from '../contexts/TutorialContext'
 import { reorderGoals } from '../firestore-storage'
 import { useTouchDragReorder } from '../hooks/useTouchDragReorder'
 import './YearView.css'
@@ -43,30 +42,6 @@ export function YearView({
   const [, forceUpdate] = useState({})
 
   const { colorScheme } = useTheme()
-  const { isActive: tutorialActive, step: tutorialStep, advance: tutorialAdvance } = useTutorial()
-
-  // When modal opens during year-grid step, advance to checkin-modal step
-  useEffect(() => {
-    if (
-      tutorialActive &&
-      modalOpen &&
-      TUTORIAL_STEPS[tutorialStep]?.id === 'year-grid'
-    ) {
-      tutorialAdvance?.()
-    }
-  }, [tutorialActive, modalOpen, tutorialStep, tutorialAdvance])
-
-  // Close modal when tutorial advances so it doesn't overlay the next step
-  useEffect(() => {
-    if (!tutorialActive) return
-    const handler = () => {
-      setModalOpen(false)
-      setSelectedGoal(null)
-      setSelectedWeek(null)
-    }
-    window.addEventListener('tutorial-advanced', handler)
-    return () => window.removeEventListener('tutorial-advanced', handler)
-  }, [tutorialActive])
   const yearGoals = goals
     .filter((g) => g.year === currentYear)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -79,12 +54,6 @@ export function YearView({
   }
 
   function handleModalClose() {
-    if (
-      tutorialActive &&
-      TUTORIAL_STEPS[tutorialStep]?.id === 'checkin-modal'
-    ) {
-      tutorialAdvance?.()
-    }
     setModalOpen(false)
     setSelectedGoal(null)
     setSelectedWeek(null)
@@ -159,7 +128,7 @@ export function YearView({
 
   if (yearGoals.length === 0) {
     return (
-      <div className="year-empty" data-tutorial-target="year-empty">
+      <div className="year-empty">
         <h2>Year Overview</h2>
         <p>Add goals to see your progress across the year.</p>
       </div>
@@ -179,7 +148,6 @@ export function YearView({
 
       <div
         className="year-timeline"
-        data-tutorial-target="year-grid"
         style={{
           gridTemplateColumns: `${GOAL_LABEL_WIDTH}px repeat(${totalWeeks}, ${WEEK_CELL_WIDTH}px)`,
           gap: `${CELL_GAP}px`,

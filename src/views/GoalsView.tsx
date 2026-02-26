@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import type { Goal } from '../types'
-import { useTutorial } from '../contexts/TutorialContext'
 import { addGoal, updateGoal, deleteGoal, reorderGoals } from '../firestore-storage'
 import { useAuth } from '../contexts/AuthContext'
 import { ShareModal } from '../components/ShareModal'
@@ -15,7 +14,6 @@ interface GoalsViewProps {
 
 export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
   const { currentUser } = useAuth()
-  const { onGoalAdded } = useTutorial()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -41,7 +39,6 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
       setTitle('')
       setDescription('')
       onRefresh()
-      onGoalAdded?.()
     } catch (error) {
       console.error('Error adding goal:', error)
       alert('Failed to add goal. Check console for details.')
@@ -120,7 +117,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
         </p>
       </section>
 
-      <form className="goal-form" data-tutorial-target="goal-form" onSubmit={handleAdd}>
+      <form className="goal-form" onSubmit={handleAdd}>
         <input
           type="text"
           placeholder="Goal title"
@@ -140,7 +137,7 @@ export function GoalsView({ goals, currentYear, onRefresh }: GoalsViewProps) {
         </button>
       </form>
 
-      <ul className="goal-list" data-tutorial-target="goal-added">
+      <ul className="goal-list">
         {yearGoals.length === 0 && (
           <li className="goal-empty">
             No goals yet. Add one above to get started.

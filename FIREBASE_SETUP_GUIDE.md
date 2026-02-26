@@ -198,6 +198,34 @@ The app now includes full sharing functionality:
 2. Click **Remove** next to any email to revoke access
 3. You can share the same goal with multiple people
 
+### Keeping the user list up to date when users are deleted
+
+User search (when sharing a goal) only shows **active** users. When a user is deleted from Firebase Auth, their Firestore profile is still there until it’s marked. The app already hides anyone whose profile has `deletedAt` set.
+
+**Free option (no Blaze plan): one-time local cleanup**
+
+If deleted users still show up in the sharing list, run the included script once from your machine:
+
+1. **Get a service account key** (one-time):
+   - Firebase Console → **Project settings** (gear) → **Service accounts**
+   - Click **Generate new private key** and save the JSON file
+   - Put it in your project root as `service-account.json` (this file is in `.gitignore`; never commit it)
+
+2. **Install dependencies and run the cleanup**:
+   ```bash
+   npm install
+   npm run cleanup-deleted-users
+   ```
+   The script marks every Firestore `users/{uid}` document whose Auth account no longer exists. After that, those users will no longer appear in the sharing search.
+
+You can run `npm run cleanup-deleted-users` again anytime you delete users from the Firebase Console.
+
+**Optional: Cloud Functions (requires Blaze plan)**
+
+The repo includes Cloud Functions that can mark profiles automatically when a user is deleted and a one-time HTTP cleanup. Deploying them requires upgrading the project to the **Blaze (pay-as-you-go)** plan. If you don’t want to pay, use the local script above instead.
+
+- **If you add a "Delete account" flow in the app:** Call `deleteUserProfile(currentUser.uid)` from `firestore-storage` before (or after) deleting the Firebase Auth user so they disappear from search immediately.
+
 ## Troubleshooting
 
 **"Firebase: Error (auth/configuration-not-found)"**

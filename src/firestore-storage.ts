@@ -366,6 +366,17 @@ export async function ensureUserProfileSearchable(
   })
 }
 
+/**
+ * Mark a user profile as deleted so they no longer appear in user search (e.g. goal sharing).
+ * Call this when a user deletes their account so the sharing list stays up to date.
+ * If users are deleted from Firebase Auth (e.g. Console) without going through the app,
+ * use a Cloud Function triggered on user delete to call this (or delete the document).
+ */
+export async function deleteUserProfile(uid: string): Promise<void> {
+  const userRef = doc(db, USERS_COLLECTION, uid)
+  await updateDoc(userRef, { deletedAt: Timestamp.now() })
+}
+
 const VALID_COLOR_SCHEMES = ['gold', 'red-green', 'teal', 'blue', 'purple', 'rose', 'coral'] as const
 
 export async function getUserColorScheme(userId: string): Promise<string | null> {
@@ -389,6 +400,7 @@ export async function getUserByEmail(email: string): Promise<UserProfile | null>
   
   const docSnap = snapshot.docs[0]
   const data = docSnap.data()
+  if (data.deletedAt) return null
   return {
     uid: data.uid,
     email: data.email,
@@ -434,6 +446,7 @@ export async function searchUsers(queryText: string): Promise<UserProfile[]> {
     const [nameSnap, emailSnap] = await Promise.all([getDocs(nameQuery), getDocs(emailQuery)])
     for (const docSnap of [...nameSnap.docs, ...emailSnap.docs]) {
       const data = docSnap.data()
+      if (data.deletedAt) continue
       if (data.uid && !seen.has(data.uid)) {
         seen.add(data.uid)
         const user = docToUserProfile(data)
@@ -453,6 +466,7 @@ export async function searchUsers(queryText: string): Promise<UserProfile[]> {
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data()
+      if (data.deletedAt) continue
       const displayNameLower = (data.displayName || data.displayNameLower || '').toLowerCase()
       const emailLower = (data.email || '').toLowerCase()
 

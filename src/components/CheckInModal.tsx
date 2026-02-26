@@ -62,7 +62,7 @@ export function CheckInModal({
 
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div className="modal-content" data-tutorial-target="checkin-modal">
+      <div className="modal-content">
         <header className="modal-header">
           <div>
             <h3>{goal.title}</h3>

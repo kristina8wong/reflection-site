@@ -19,6 +19,9 @@ yarn-error.log*
 .env
 .env.local
 
+# Firebase service account key (for local cleanup script only; never commit)
+service-account.json
+
 # Generated PWA icons (created by npm run generate-icons)
 public/icon-192.png
 public/icon-512.png
